@@ -44,6 +44,16 @@ if not SUPABASE_KEY:
 
 SUPABASE_REST_URL = f"{SUPABASE_URL}/rest/v1"
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Or specify your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Headers for Supabase API requests
 def get_supabase_headers():
     return {
