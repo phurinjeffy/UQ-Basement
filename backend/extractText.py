@@ -7,7 +7,8 @@ from playwright.sync_api import sync_playwright
 BASE_URL = "https://www.library.uq.edu.au/exams/course/"
 
 def download_past_papers_text(course_code):
-    download_dir = os.path.join(os.getcwd(), course_code)
+    # Save into past_papers/<COURSE_CODE>/
+    download_dir = os.path.join(os.getcwd(), "past_papers", course_code)
     os.makedirs(download_dir, exist_ok=True)
 
     with sync_playwright() as p:
@@ -51,7 +52,7 @@ def download_past_papers_text(course_code):
 
             # Download PDF
             resp = requests.get(pdf_url, cookies=cookie_dict)
-            if resp.status_code == 200 and resp.headers.get("Content-Type","").startswith("application/pdf"):
+            if resp.status_code == 200 and resp.headers.get("Content-Type", "").startswith("application/pdf"):
                 pdf_bytes = BytesIO(resp.content)
                 reader = PdfReader(pdf_bytes)
                 text = "\n\n".join([page.extract_text() or "" for page in reader.pages])
