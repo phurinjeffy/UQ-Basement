@@ -1,3 +1,4 @@
 past_papers/
 /venv
 .env
+__pycache__/
