@@ -1,1 +1,1 @@
-# Academic-Helper
+# UQCS Hackathon 2025
