@@ -1,13 +1,14 @@
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 import os
-from dotenv import load_dotenv
-from typing import Optional
+from typing import Optional, List
 import logging
 import httpx
-import json
 from passlib.context import CryptContext
-from passlib.hash import bcrypt
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Set up password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -24,18 +25,23 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv()
+# Initialize FastAPI app
+app = FastAPI(
+    title="Users API",
+    description="A simple users management API with Supabase backend",
+    version="1.0.0"
+)
 
-# Initialize Supabase configuration
+# Get Supabase configuration
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 # Validate environment variables
-if not SUPABASE_URL or not SUPABASE_KEY:
-    raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in environment variables")
+if not SUPABASE_URL:
+    raise ValueError("SUPABASE_URL environment variable is not set")
+if not SUPABASE_KEY:
+    raise ValueError("SUPABASE_KEY environment variable is not set")
 
-# Supabase REST API endpoints
 SUPABASE_REST_URL = f"{SUPABASE_URL}/rest/v1"
 
 # Headers for Supabase API requests
@@ -47,27 +53,8 @@ def get_supabase_headers():
         "Prefer": "return=representation"
     }
 
-# Initialize FastAPI app
-app = FastAPI(
-    title="User Management API",
-    description="API for managing users with Supabase REST API and password hashing",
-    version="1.0.0"
-)
-
-# Pydantic models for request/response
+# Pydantic models
 class UserCreate(BaseModel):
-    email: str
-    password: str  # Plain password - will be hashed before storing
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "email": "john.doe@example.com",
-                "password": "securepassword123"
-            }
-        }
-
-class UserLogin(BaseModel):
     email: str
     password: str
 
@@ -75,33 +62,46 @@ class UserLogin(BaseModel):
         schema_extra = {
             "example": {
                 "email": "john.doe@example.com",
-                "password": "securepassword123"
+                "password": "securepassword123",
             }
         }
 
-class UserResponse(BaseModel):
-    id: int
-    name: str
+class UserLogin(BaseModel):
     email: str
-    age: Optional[int]
-    phone: Optional[str]
-    created_at: str
-    # Note: password_hash is excluded from response for security
+    password: str
 
 class UserUpdate(BaseModel):
-    name: Optional[str] = None
     email: Optional[str] = None
-    age: Optional[int] = None
-    phone: Optional[str] = None
 
 class PasswordUpdate(BaseModel):
     current_password: str
     new_password: str
 
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    created_at: str
+    courses: Optional[List[dict]] = []
+
+class CourseEnrollment(BaseModel):
+    course_code: str
+    course_name: str
+    semester: str
+    year: int
+
+# Root endpoint
 @app.get("/")
 async def root():
-    return {"message": "FastAPI + Supabase REST API User Management with Password Hashing is working!"}
+    """Root endpoint"""
+    return {"message": "Users API is running", "version": "1.0.0"}
 
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "service": "users-api"}
+
+# Users endpoints
 @app.get("/users")
 async def get_users():
     """Get all users from the database (passwords excluded)"""
@@ -110,7 +110,7 @@ async def get_users():
             response = await client.get(
                 f"{SUPABASE_REST_URL}/users",
                 headers=get_supabase_headers(),
-                params={"select": "id,name,email,age,phone,created_at"}  # Exclude password_hash
+                params={"select": "id,email,created_at"}
             )
             
             if response.status_code != 200:
@@ -138,7 +138,7 @@ async def get_users():
 
 @app.post("/users", status_code=status.HTTP_201_CREATED)
 async def create_user(user: UserCreate):
-    """Create a new user in the database with hashed password (email and password only)"""
+    """Create a new user in the database with hashed password"""
     try:
         async with httpx.AsyncClient() as client:
             # Check if user with email already exists
@@ -147,52 +147,57 @@ async def create_user(user: UserCreate):
                 headers=get_supabase_headers(),
                 params={"email": f"eq.{user.email}", "select": "email"}
             )
+            
             if check_response.status_code == 200 and check_response.json():
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="User with this email already exists"
                 )
+            
             # Hash the password
             hashed_password = hash_password(user.password)
-            # Prepare user data with hashed password (only email and password_hash)
+            
+            # Prepare user data with hashed password (only fields that exist in table)
             user_data = {
                 "email": user.email,
                 "password_hash": hashed_password
             }
+            
             # Create the user
             create_response = await client.post(
                 f"{SUPABASE_REST_URL}/users",
                 headers=get_supabase_headers(),
                 json=user_data
             )
+            
             if create_response.status_code not in [200, 201]:
                 raise HTTPException(
                     status_code=create_response.status_code,
                     detail=f"Supabase API error: {create_response.text}"
                 )
+            
             created_users = create_response.json()
             if not created_users:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Failed to create user - no data returned"
                 )
+            
             created_user = created_users[0] if isinstance(created_users, list) else created_users
+            
             # Remove password_hash from response
             if 'password_hash' in created_user:
                 del created_user['password_hash']
+                
             logger.info(f"User created successfully: {created_user.get('email', 'unknown')}")
+            
             return {
                 "message": "User created successfully",
                 "user": created_user
             }
+            
     except HTTPException:
         raise
-    except httpx.RequestError as e:
-        logger.error(f"Request error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Failed to connect to database"
-        )
     except Exception as e:
         logger.error(f"Error creating user: {str(e)}")
         raise HTTPException(
@@ -219,7 +224,6 @@ async def login_user(login_data: UserLogin):
                 )
             
             users = response.json()
-            
             if not users:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -248,12 +252,6 @@ async def login_user(login_data: UserLogin):
             
     except HTTPException:
         raise
-    except httpx.RequestError as e:
-        logger.error(f"Request error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Failed to connect to database"
-        )
     except Exception as e:
         logger.error(f"Error during login: {str(e)}")
         raise HTTPException(
@@ -263,42 +261,54 @@ async def login_user(login_data: UserLogin):
 
 @app.get("/users/{user_id}")
 async def get_user(user_id: int):
-    """Get a specific user by ID (password excluded)"""
+    """Get a specific user by ID with their enrolled courses"""
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(
+            # Get user details (only available fields)
+            user_response = await client.get(
                 f"{SUPABASE_REST_URL}/users",
                 headers=get_supabase_headers(),
                 params={
                     "id": f"eq.{user_id}",
-                    "select": "id,name,email,age,phone,created_at"  # Exclude password_hash
+                    "select": "id,email,created_at"
                 }
             )
             
-            if response.status_code != 200:
+            if user_response.status_code != 200:
                 raise HTTPException(
-                    status_code=response.status_code,
-                    detail=f"Supabase API error: {response.text}"
+                    status_code=user_response.status_code,
+                    detail=f"Supabase API error: {user_response.text}"
                 )
             
-            users = response.json()
-            
+            users = user_response.json()
             if not users:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="User not found"
                 )
             
-            return {"user": users[0]}
+            user = users[0]
+            
+            # Get user's course enrollments if user_courses table exists
+            try:
+                courses_response = await client.get(
+                    f"{SUPABASE_REST_URL}/user_courses",
+                    headers=get_supabase_headers(),
+                    params={"user_id": f"eq.{user_id}"}
+                )
+                
+                if courses_response.status_code == 200:
+                    user['courses'] = courses_response.json()
+                else:
+                    user['courses'] = []
+            except:
+                # If user_courses table doesn't exist, just set empty array
+                user['courses'] = []
+            
+            return {"user": user}
             
     except HTTPException:
         raise
-    except httpx.RequestError as e:
-        logger.error(f"Request error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Failed to connect to database"
-        )
     except Exception as e:
         logger.error(f"Error retrieving user {user_id}: {str(e)}")
         raise HTTPException(
@@ -308,7 +318,7 @@ async def get_user(user_id: int):
 
 @app.put("/users/{user_id}")
 async def update_user(user_id: int, user_update: UserUpdate):
-    """Update a user by ID (excluding password)"""
+    """Update a user by ID (only email can be updated)"""
     try:
         # Only include non-None values
         update_data = {k: v for k, v in user_update.dict().items() if v is not None}
@@ -319,8 +329,24 @@ async def update_user(user_id: int, user_update: UserUpdate):
                 detail="No valid fields to update"
             )
         
+        # Check if email already exists for another user
+        if 'email' in update_data:
+            async with httpx.AsyncClient() as client:
+                check_response = await client.get(
+                    f"{SUPABASE_REST_URL}/users",
+                    headers=get_supabase_headers(),
+                    params={"email": f"eq.{update_data['email']}", "select": "id"}
+                )
+                
+                if check_response.status_code == 200:
+                    existing_users = check_response.json()
+                    if existing_users and existing_users[0]['id'] != user_id:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="User with this email already exists"
+                        )
+        
         async with httpx.AsyncClient() as client:
-            # Update the user
             response = await client.patch(
                 f"{SUPABASE_REST_URL}/users",
                 headers=get_supabase_headers(),
@@ -335,7 +361,6 @@ async def update_user(user_id: int, user_update: UserUpdate):
                 )
             
             updated_users = response.json() if response.content else []
-            
             if not updated_users:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -357,12 +382,6 @@ async def update_user(user_id: int, user_update: UserUpdate):
             
     except HTTPException:
         raise
-    except httpx.RequestError as e:
-        logger.error(f"Request error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Failed to connect to database"
-        )
     except Exception as e:
         logger.error(f"Error updating user {user_id}: {str(e)}")
         raise HTTPException(
@@ -375,7 +394,7 @@ async def update_user_password(user_id: int, password_data: PasswordUpdate):
     """Update a user's password"""
     try:
         async with httpx.AsyncClient() as client:
-            # First, get the user to verify current password
+            # Get user to verify current password
             get_response = await client.get(
                 f"{SUPABASE_REST_URL}/users",
                 headers=get_supabase_headers(),
@@ -389,7 +408,6 @@ async def update_user_password(user_id: int, password_data: PasswordUpdate):
                 )
             
             users = get_response.json()
-            
             if not users:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -405,10 +423,8 @@ async def update_user_password(user_id: int, password_data: PasswordUpdate):
                     detail="Current password is incorrect"
                 )
             
-            # Hash new password
+            # Hash new password and update
             new_password_hash = hash_password(password_data.new_password)
-            
-            # Update password
             update_response = await client.patch(
                 f"{SUPABASE_REST_URL}/users",
                 headers=get_supabase_headers(),
@@ -423,17 +439,10 @@ async def update_user_password(user_id: int, password_data: PasswordUpdate):
                 )
             
             logger.info(f"Password updated successfully for user {user_id}")
-            
             return {"message": "Password updated successfully"}
             
     except HTTPException:
         raise
-    except httpx.RequestError as e:
-        logger.error(f"Request error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Failed to connect to database"
-        )
     except Exception as e:
         logger.error(f"Error updating password for user {user_id}: {str(e)}")
         raise HTTPException(
@@ -459,7 +468,7 @@ async def delete_user(user_id: int):
                     detail="User not found"
                 )
             
-            # Delete the user
+            # Delete the user (this will cascade delete enrollments if foreign keys are set up)
             delete_response = await client.delete(
                 f"{SUPABASE_REST_URL}/users",
                 headers=get_supabase_headers(),
@@ -477,12 +486,6 @@ async def delete_user(user_id: int):
             
     except HTTPException:
         raise
-    except httpx.RequestError as e:
-        logger.error(f"Request error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Failed to connect to database"
-        )
     except Exception as e:
         logger.error(f"Error deleting user {user_id}: {str(e)}")
         raise HTTPException(
@@ -490,33 +493,188 @@ async def delete_user(user_id: int):
             detail=f"Failed to delete user: {str(e)}"
         )
 
-# Health check endpoint
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
+# Course enrollment endpoints (if you have a user_courses table)
+@app.post("/users/{user_id}/courses")
+async def enroll_user_in_course(user_id: int, course: CourseEnrollment):
+    """Enroll a user in a course"""
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(
+            # Check if user exists
+            user_response = await client.get(
                 f"{SUPABASE_REST_URL}/users",
                 headers=get_supabase_headers(),
-                params={"limit": "1", "select": "id"}
+                params={"id": f"eq.{user_id}", "select": "id"}
             )
             
-            if response.status_code == 200:
-                return {"status": "healthy", "database": "connected"}
-            else:
+            if user_response.status_code != 200 or not user_response.json():
                 raise HTTPException(
-                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail=f"Database connection failed: {response.text}"
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User not found"
                 )
-                
-    except httpx.RequestError as e:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Database connection failed: {str(e)}"
-        )
+            
+            # Check if already enrolled
+            existing_enrollment = await client.get(
+                f"{SUPABASE_REST_URL}/user_courses",
+                headers=get_supabase_headers(),
+                params={
+                    "user_id": f"eq.{user_id}",
+                    "course_code": f"eq.{course.course_code}"
+                }
+            )
+            
+            if existing_enrollment.status_code == 200 and existing_enrollment.json():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="User is already enrolled in this course"
+                )
+            
+            # Create enrollment
+            enrollment_data = {
+                "user_id": user_id,
+                "course_code": course.course_code,
+                "course_name": course.course_name,
+                "semester": course.semester,
+                "year": course.year
+            }
+            
+            create_response = await client.post(
+                f"{SUPABASE_REST_URL}/user_courses",
+                headers=get_supabase_headers(),
+                json=enrollment_data
+            )
+            
+            if create_response.status_code not in [200, 201]:
+                raise HTTPException(
+                    status_code=create_response.status_code,
+                    detail=f"Supabase API error: {create_response.text}"
+                )
+            
+            created_enrollment = create_response.json()
+            if not created_enrollment:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to create enrollment"
+                )
+            
+            enrollment = created_enrollment[0] if isinstance(created_enrollment, list) else created_enrollment
+            
+            logger.info(f"User {user_id} enrolled in course {course.course_code}")
+            
+            return {
+                "message": "Successfully enrolled in course",
+                "enrollment": enrollment
+            }
+            
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Error enrolling user {user_id} in course: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Database connection failed: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to enroll in course: {str(e)}"
         )
+
+@app.get("/users/{user_id}/courses")
+async def get_user_courses(user_id: int):
+    """Get all courses for a specific user"""
+    try:
+        async with httpx.AsyncClient() as client:
+            # Check if user exists
+            user_response = await client.get(
+                f"{SUPABASE_REST_URL}/users",
+                headers=get_supabase_headers(),
+                params={"id": f"eq.{user_id}", "select": "id,email"}
+            )
+            
+            if user_response.status_code != 200 or not user_response.json():
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User not found"
+                )
+            
+            user = user_response.json()[0]
+            
+            # Get user's courses
+            courses_response = await client.get(
+                f"{SUPABASE_REST_URL}/user_courses",
+                headers=get_supabase_headers(),
+                params={"user_id": f"eq.{user_id}"}
+            )
+            
+            if courses_response.status_code != 200:
+                raise HTTPException(
+                    status_code=courses_response.status_code,
+                    detail=f"Supabase API error: {courses_response.text}"
+                )
+            
+            courses = courses_response.json()
+            
+            return {
+                "user": user,
+                "courses": courses,
+                "count": len(courses)
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving courses for user {user_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve courses: {str(e)}"
+        )
+
+@app.delete("/users/{user_id}/courses/{course_code}")
+async def unenroll_user_from_course(user_id: int, course_code: str):
+    """Remove a user from a course"""
+    try:
+        async with httpx.AsyncClient() as client:
+            # Check if enrollment exists
+            check_response = await client.get(
+                f"{SUPABASE_REST_URL}/user_courses",
+                headers=get_supabase_headers(),
+                params={
+                    "user_id": f"eq.{user_id}",
+                    "course_code": f"eq.{course_code}"
+                }
+            )
+            
+            if check_response.status_code != 200 or not check_response.json():
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Enrollment not found"
+                )
+            
+            # Delete enrollment
+            delete_response = await client.delete(
+                f"{SUPABASE_REST_URL}/user_courses",
+                headers=get_supabase_headers(),
+                params={
+                    "user_id": f"eq.{user_id}",
+                    "course_code": f"eq.{course_code}"
+                }
+            )
+            
+            if delete_response.status_code not in [200, 204]:
+                raise HTTPException(
+                    status_code=delete_response.status_code,
+                    detail=f"Supabase API error: {delete_response.text}"
+                )
+            
+            logger.info(f"User {user_id} unenrolled from course {course_code}")
+            
+            return {"message": "Successfully unenrolled from course"}
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error unenrolling user {user_id} from course {course_code}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to unenroll from course: {str(e)}"
+        )
+
+# Run the application
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
