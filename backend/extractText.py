@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import glob
+import re
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -11,12 +12,25 @@ from PyPDF2 import PdfReader
 
 BASE_URL = "https://www.library.uq.edu.au/exams/course/"
 
+def clean_filename(course_code, original_name):
+    """
+    Convert 'Semester_Two_Examinations_2024_CSSE2310.pdf'
+    into 'CSSE2310_Sem2_2024.txt'
+    """
+    name = original_name.replace(".pdf", "")
+    # Extract semester
+    sem_match = re.search(r"Semester[_ ](One|Two)", name, re.IGNORECASE)
+    semester = "Sem1" if sem_match and sem_match.group(1).lower() == "one" else "Sem2"
+    # Extract year
+    year_match = re.search(r"\d{4}", name)
+    year = year_match.group(0) if year_match else "UnknownYear"
+    # Combine clean name
+    return f"{course_code}_{semester}_{year}.txt"
+
 def download_and_extract(course_code):
-    # Course-specific folder
     download_dir = os.path.join(os.getcwd(), "past_papers", course_code)
     os.makedirs(download_dir, exist_ok=True)
 
-    # Configure Chrome
     chrome_options = Options()
     chrome_options.add_argument("--start-maximized")
     chrome_options.add_experimental_option("prefs", {
@@ -26,9 +40,8 @@ def download_and_extract(course_code):
     })
 
     driver = webdriver.Chrome(options=chrome_options)
-    wait = WebDriverWait(driver, 180)  # wait up to 3 minutes for login + Duo
+    wait = WebDriverWait(driver, 180)
 
-    # Open course page
     course_url = f"{BASE_URL}{course_code}"
     print(f"[+] Opening course page: {course_url}")
     driver.get(course_url)
@@ -47,7 +60,7 @@ def download_and_extract(course_code):
     pdf_elements = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "a[href$='.pdf']")))
     print(f"[✓] Login detected. Found {len(pdf_elements)} PDF links.")
 
-    # Get all PDF URLs
+    # Get PDF URLs
     pdf_urls = [el.get_attribute("href") for el in pdf_elements]
 
     # Download PDFs one at a time
@@ -59,24 +72,25 @@ def download_and_extract(course_code):
     driver.quit()
     print("[+] Chrome downloads triggered. Waiting for files to finish...")
 
-    # Wait a few seconds to ensure all PDFs are fully downloaded
-    time.sleep(5)
+    time.sleep(5)  # wait for downloads
 
-    # Extract text from downloaded PDFs
+    # Extract text and save with clean names
     pdf_files = glob.glob(os.path.join(download_dir, "*.pdf"))
     for pdf_file in pdf_files:
-        print(f"➡ Extracting text from {os.path.basename(pdf_file)}")
+        original_name = os.path.basename(pdf_file)
+        clean_name = clean_filename(course_code, original_name)
+        txt_path = os.path.join(download_dir, clean_name)
+        print(f"➡ Extracting {original_name} → {clean_name}")
+
         try:
             with open(pdf_file, "rb") as f:
                 reader = PdfReader(f)
                 text = "\n\n".join([page.extract_text() or "" for page in reader.pages])
-
-            txt_path = pdf_file.replace(".pdf", ".txt")
             with open(txt_path, "w", encoding="utf-8") as f:
                 f.write(text)
             print(f"✅ Text saved: {txt_path}")
         except Exception as e:
-            print(f"⚠ Failed to extract {os.path.basename(pdf_file)}: {e}")
+            print(f"⚠ Failed to extract {original_name}: {e}")
 
     print(f"\n[✓] All papers processed and saved in: {download_dir}")
 
