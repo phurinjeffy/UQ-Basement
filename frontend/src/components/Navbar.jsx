@@ -1,4 +1,6 @@
+
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 
 function Navbar() {
   // Load Google Fonts
@@ -26,13 +28,15 @@ function Navbar() {
         </label>
       </div>
 
+
       <div className="navbar-center">
-        <a
+        <Link
+          to="/dashboard"
           className="text-3xl font-bold text-gray-900 dark:text-gray-100"
           style={{ fontFamily: "'Inter', sans-serif" }}
         >
           UQ-Basement
-        </a>
+        </Link>
       </div>
 
       <div className="navbar-end">

@@ -3,8 +3,10 @@ import './App.css'
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
 import { Routes, Route } from 'react-router-dom'
+
 import Home from './pages/Home.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import NotFound from './pages/NotFound.jsx';
 
 function App() {
   return (
@@ -15,7 +17,8 @@ function App() {
           <Navbar />
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/dashboard" element={<Dashboard />}/>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
         <Sidebar />
