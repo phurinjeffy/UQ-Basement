@@ -8,7 +8,12 @@ import requests
 COURSE_FOLDER = "past_papers/csse2310"
 NUM_TEST_QUESTIONS = 5
 NUM_MOCK_QUESTIONS = 5
-OPENROUTER_KEY = os.environ.get("OPENROUTER_KEY")
+
+# OPENROUTER_KEY = os.environ.get("OPENROUTER_KEY")
+from dotenv import load_dotenv
+load_dotenv()
+OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
+
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 MODEL_NAME = "meta-llama/llama-3.2-3b-instruct:free"
 
