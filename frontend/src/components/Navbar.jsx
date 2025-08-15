@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
@@ -6,7 +5,8 @@ function Navbar() {
   // Load Google Fonts
   useEffect(() => {
     const link = document.createElement("link");
-    link.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap";
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap";
     link.rel = "stylesheet";
     document.head.appendChild(link);
   }, []);
@@ -15,7 +15,10 @@ function Navbar() {
     <div className="navbar bg-gray-100 dark:bg-gray-800 shadow-md h-20 px-6 z-50">
       <div className="navbar-start">
         {/* Hamburger toggle for drawer */}
-        <label htmlFor="my-drawer" className="btn btn-ghost btn-circle drawer-button">
+        <label
+          htmlFor="my-drawer"
+          className="btn btn-ghost btn-circle drawer-button"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-6 w-6 text-gray-900 dark:text-gray-100"
@@ -23,11 +26,15 @@ function Navbar() {
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M4 6h16M4 12h16M4 18h7"
+            />
           </svg>
         </label>
       </div>
-
 
       <div className="navbar-center">
         <Link
@@ -56,10 +63,9 @@ function Navbar() {
             className="menu menu-sm dropdown-content bg-gray-100 dark:bg-gray-800 rounded-box mt-3 w-40 p-2 shadow"
           >
             <li>
-              <a className="text-gray-900 dark:text-gray-100">Profile</a>
-            </li>
-            <li>
-              <a className="text-gray-900 dark:text-gray-100">Settings</a>
+              <Link to="/profile" className="text-gray-900 dark:text-gray-100">
+                View Profile
+              </Link>
             </li>
             <li>
               <a className="text-gray-900 dark:text-gray-100">Logout</a>
