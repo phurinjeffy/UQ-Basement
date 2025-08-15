@@ -56,20 +56,14 @@ app = FastAPI(
 
 # Pydantic models for request/response
 class UserCreate(BaseModel):
-    name: str
     email: str
     password: str  # Plain password - will be hashed before storing
-    age: Optional[int] = None
-    phone: Optional[str] = None
 
     class Config:
         schema_extra = {
             "example": {
-                "name": "John Doe",
                 "email": "john.doe@example.com",
-                "password": "securepassword123",
-                "age": 30,
-                "phone": "+1234567890"
+                "password": "securepassword123"
             }
         }
 
@@ -144,7 +138,7 @@ async def get_users():
 
 @app.post("/users", status_code=status.HTTP_201_CREATED)
 async def create_user(user: UserCreate):
-    """Create a new user in the database with hashed password"""
+    """Create a new user in the database with hashed password (email and password only)"""
     try:
         async with httpx.AsyncClient() as client:
             # Check if user with email already exists
@@ -153,59 +147,44 @@ async def create_user(user: UserCreate):
                 headers=get_supabase_headers(),
                 params={"email": f"eq.{user.email}", "select": "email"}
             )
-            
             if check_response.status_code == 200 and check_response.json():
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="User with this email already exists"
                 )
-            
             # Hash the password
             hashed_password = hash_password(user.password)
-            
-            # Prepare user data with hashed password
+            # Prepare user data with hashed password (only email and password_hash)
             user_data = {
-                "name": user.name,
                 "email": user.email,
-                "password_hash": hashed_password,
-                "age": user.age,
-                "phone": user.phone
+                "password_hash": hashed_password
             }
-            
             # Create the user
             create_response = await client.post(
                 f"{SUPABASE_REST_URL}/users",
                 headers=get_supabase_headers(),
                 json=user_data
             )
-            
             if create_response.status_code not in [200, 201]:
                 raise HTTPException(
                     status_code=create_response.status_code,
                     detail=f"Supabase API error: {create_response.text}"
                 )
-            
             created_users = create_response.json()
-            
             if not created_users:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Failed to create user - no data returned"
                 )
-            
             created_user = created_users[0] if isinstance(created_users, list) else created_users
-            
             # Remove password_hash from response
             if 'password_hash' in created_user:
                 del created_user['password_hash']
-                
             logger.info(f"User created successfully: {created_user.get('email', 'unknown')}")
-            
             return {
                 "message": "User created successfully",
                 "user": created_user
             }
-            
     except HTTPException:
         raise
     except httpx.RequestError as e:
