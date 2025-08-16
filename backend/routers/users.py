@@ -165,7 +165,7 @@ async def login_user(login_data: UserLogin):
         )
 
 @router.get("/users/{user_id}")
-async def get_user(user_id: int):
+async def get_user(user_id: str):
     """Get a specific user by ID with their enrolled courses"""
     try:
         async with httpx.AsyncClient() as client:
@@ -222,7 +222,7 @@ async def get_user(user_id: int):
         )
 
 @router.put("/users/{user_id}")
-async def update_user(user_id: int, user_update: UserUpdate):
+async def update_user(user_id: str, user_update: UserUpdate):
     """Update a user by ID (only email can be updated)"""
     try:
         # Only include non-None values
@@ -295,7 +295,7 @@ async def update_user(user_id: int, user_update: UserUpdate):
         )
 
 @router.put("/users/{user_id}/password")
-async def update_user_password(user_id: int, password_data: PasswordUpdate):
+async def update_user_password(user_id: str, password_data: PasswordUpdate):
     """Update a user's password"""
     try:
         async with httpx.AsyncClient() as client:
@@ -356,7 +356,7 @@ async def update_user_password(user_id: int, password_data: PasswordUpdate):
         )
 
 @router.delete("/users/{user_id}")
-async def delete_user(user_id: int):
+async def delete_user(user_id: str):
     """Delete a user by ID"""
     try:
         async with httpx.AsyncClient() as client:
@@ -400,7 +400,7 @@ async def delete_user(user_id: int):
 
 # Course enrollment endpoints (if you have a user_courses table)
 @router.post("/users/{user_id}/courses")
-async def enroll_user_in_course(user_id: int, course: CourseEnrollment):
+async def enroll_user_in_course(user_id: str, course: CourseEnrollment):
     """Enroll a user in a course"""
     try:
         async with httpx.AsyncClient() as client:
@@ -480,7 +480,7 @@ async def enroll_user_in_course(user_id: int, course: CourseEnrollment):
         )
 
 @router.get("/users/{user_id}/courses")
-async def get_user_courses(user_id: int):
+async def get_user_courses(user_id: str):
     """Get all courses for a specific user"""
     try:
         async with httpx.AsyncClient() as client:
@@ -530,7 +530,7 @@ async def get_user_courses(user_id: int):
         )
 
 @router.delete("/users/{user_id}/courses/{course_code}")
-async def unenroll_user_from_course(user_id: int, course_code: str):
+async def unenroll_user_from_course(user_id: str, course_code: str):
     """Remove a user from a course"""
     try:
         async with httpx.AsyncClient() as client:
