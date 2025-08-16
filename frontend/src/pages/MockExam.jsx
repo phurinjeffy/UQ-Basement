@@ -68,8 +68,52 @@ const MockExam = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 py-10 px-4">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="container mx-auto py-10 px-4 lg:px-8">
+        {/* Breadcrumbs (only for course pages) */}
+        <div className="breadcrumbs text-sm mb-6">
+          <ul>
+            <li>
+              <a href="/dashboard">
+                {/* Dashboard Icon */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4 stroke-current"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"
+                  />
+                </svg>{" "}
+                Dashboard
+              </a>
+            </li>
+            <li>
+              <span className="inline-flex items-center gap-2">
+                {/* Course Icon (Book) */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4 stroke-current"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 5a2 2 0 012-2h12a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V5z"
+                  />
+                </svg>{" "}
+                {courseInfo.code}
+              </span>
+            </li>
+          </ul>
+        </div>
+
         {/* Course Info Card */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6 mb-8 flex flex-col md:flex-row items-center gap-6">
           <div className="flex-shrink-0 bg-indigo-100 dark:bg-indigo-900 rounded-full w-20 h-20 flex items-center justify-center">

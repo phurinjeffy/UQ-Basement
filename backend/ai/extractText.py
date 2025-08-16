@@ -17,7 +17,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from PyPDF2 import PdfReader
 
 import sys
-sys.stdout.reconfigure(encoding='utf-8')
+
+sys.stdout.reconfigure(encoding="utf-8")
 
 # Always use project root for past_papers dir (not used for downloads anymore)
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -75,10 +76,10 @@ def upload_to_s3(file_path, s3_key):
 
 
 def download_pdfs(course_code):
-
     # Use a temporary directory for downloads
     download_dir = tempfile.mkdtemp(prefix=f"{course_code}_pdfs_")
 
+    # 1. Launch visible browser for login
     chrome_options = Options()
     chrome_options.add_argument("--start-maximized")
     chrome_options.add_experimental_option(
@@ -89,7 +90,6 @@ def download_pdfs(course_code):
             "download.default_directory": download_dir,
         },
     )
-
     driver = webdriver.Chrome(options=chrome_options)
     wait = WebDriverWait(driver, 180)
 
@@ -107,7 +107,7 @@ def download_pdfs(course_code):
 
     print("[i] Waiting for UQ login + Duo Mobile authentication...")
 
-    # Wait until at least one PDF link appears
+    # Wait until at least one PDF link appears (login complete)
     pdf_elements = wait.until(
         EC.presence_of_all_elements_located((By.CSS_SELECTOR, "a[href$='.pdf']"))
     )
@@ -115,6 +115,43 @@ def download_pdfs(course_code):
 
     # Get PDF URLs
     pdf_urls = [el.get_attribute("href") for el in pdf_elements]
+
+    # Extract cookies from the visible browser
+    cookies = driver.get_cookies()
+    driver.quit()
+    print("[+] Login complete. Switching to headless mode for background downloads...")
+
+    # 2. Launch headless browser for background downloads
+    headless_options = Options()
+    headless_options.add_argument("--headless=new")
+    headless_options.add_argument("--window-size=1920,1080")
+    headless_options.add_experimental_option(
+        "prefs",
+        {
+            "plugins.always_open_pdf_externally": True,
+            "download.prompt_for_download": False,
+            "download.default_directory": download_dir,
+        },
+    )
+    headless_driver = webdriver.Chrome(options=headless_options)
+    headless_driver.get(course_url)
+    # Set cookies in headless browser
+    for cookie in cookies:
+        cookie_dict = cookie.copy()
+        # Remove 'sameSite' if present (not accepted by Selenium add_cookie)
+        cookie_dict.pop("sameSite", None)
+        try:
+            headless_driver.add_cookie(cookie_dict)
+        except Exception as e:
+            print(f"[!] Failed to add cookie: {cookie_dict.get('name')}: {e}")
+    headless_driver.refresh()
+
+    # Wait for PDF links to appear again (should be instant)
+    wait2 = WebDriverWait(headless_driver, 30)
+    pdf_elements2 = wait2.until(
+        EC.presence_of_all_elements_located((By.CSS_SELECTOR, "a[href$='.pdf']"))
+    )
+    print(f"[✓] Headless mode: Found {len(pdf_elements2)} PDF links.")
 
     s3 = s3_client()
     # Download PDFs one at a time, skip if already in S3
@@ -125,7 +162,7 @@ def download_pdfs(course_code):
             print(f"[S3] Skipping {pdf_name}, already exists in S3.")
             continue
         print(f"[{i}/{len(pdf_urls)}] Downloading: {pdf_name}")
-        driver.get(url)
+        headless_driver.get(url)
         time.sleep(5)  # adjust if downloads are slow
         # After download, upload to S3, then delete local file
         local_pdf = os.path.join(download_dir, pdf_name)
@@ -141,10 +178,9 @@ def download_pdfs(course_code):
     shutil.rmtree(download_dir, ignore_errors=True)
     print(f"[Temp] Removed temp download dir {download_dir}")
 
-    driver.quit()
-    print("[+] Chrome downloads triggered. Waiting for files to finish...")
-
-    time.sleep(5)  # wait for downloads
+    headless_driver.quit()
+    print("[+] Background downloads complete.")
+    time.sleep(2)
 
 
 if __name__ == "__main__":
