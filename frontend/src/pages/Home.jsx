@@ -1,17 +1,18 @@
 import { useState, useEffect } from "react";
 import AddCourses from "../components/AddCourses";
-import { loginUser, signupUser } from "../api";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+
 
 function Home() {
-  const [showAddCourses, setShowAddCourses] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
   const [form, setForm] = useState({
     email: "",
     password: "",
     confirmPassword: "",
   });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { login, signup, loading, error } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const link = document.createElement("link");
@@ -27,36 +28,26 @@ function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     if (isSignup && form.password !== form.confirmPassword) {
-      setError("Passwords do not match");
+      alert("Passwords do not match");
       return;
     }
-    setLoading(true);
-    try {
-      if (isSignup) {
-        const res = await signupUser({
-          email: form.email,
-          password: form.password,
-        });
-        localStorage.setItem("user", JSON.stringify(res.user));
-        setShowAddCourses(true);
-      } else {
-        const res = await loginUser(form.email, form.password);
-        localStorage.setItem("user", JSON.stringify(res.user));
-        setShowAddCourses(true);
-      }
-    } catch (err) {
-      setError(err?.response?.data?.detail || "Authentication failed");
-    } finally {
-      setLoading(false);
+    let success = false;
+    if (isSignup) {
+      success = await signup(form.email, form.password);
+    } else {
+      success = await login(form.email, form.password);
+    }
+    if (success) {
+      navigate("/dashboard");
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-base-200 px-4">
       <div className="hero bg-base-100 dark:bg-gray-800 rounded-2xl shadow-2xl p-10 max-w-4xl w-full mx-auto flex flex-col lg:flex-row gap-10 transition-colors">
-        {!showAddCourses ? (
+  {/* Always show login/signup, redirect handled by PrivateRoute */}
+  {true ? (
           <>
             <div className="flex-1 text-center lg:text-left">
               <h1
