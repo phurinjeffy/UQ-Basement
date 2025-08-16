@@ -5,7 +5,7 @@ import urllib.parse
 from models import (
     CourseCreate, CourseUpdate, CourseResponse, 
     EnrollmentCreate, EnrollmentResponse,
-    UQCourse, SyncResponse, BatchCreateResponse
+    UQCourse
 )
 from config import get_supabase_headers, SUPABASE_REST_URL, logger
 from uuid import UUID
