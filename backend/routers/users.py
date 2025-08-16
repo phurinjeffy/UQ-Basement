@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 import jwt
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 import os
 import httpx
 from typing import Optional, List
@@ -24,7 +24,7 @@ from uuid import UUID
 
 JWT_SECRET = os.environ.get("JWT_SECRET")
 JWT_ALGORITHM = "HS256"
-JWT_EXP_DELTA_SECONDS = 10800
+JWT_EXP_DELTA_SECONDS = 3600
 
 router = APIRouter()
 
@@ -175,7 +175,7 @@ async def login_user(login_data: UserLogin):
             payload = {
                 "user_id": user["id"],
                 "name": user.get("name", user.get("email")),
-                "exp": (datetime.now(timezone.utc) + timedelta(seconds=JWT_EXP_DELTA_SECONDS)).timestamp()
+                "exp": (datetime.utcnow() + timedelta(seconds=JWT_EXP_DELTA_SECONDS)).timestamp()
             }
             if not JWT_SECRET:
                 raise HTTPException(
