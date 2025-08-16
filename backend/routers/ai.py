@@ -3,6 +3,7 @@ from fastapi.responses import FileResponse
 
 import os
 import subprocess
+import sys
 import boto3
 from botocore.client import Config
 
@@ -25,7 +26,7 @@ async def get_papers(course_code: str):
     try:
         result = subprocess.run(
             [
-                "python3",
+                sys.executable,
                 os.path.join(PROJECT_ROOT, "ai/extractText.py"),
                 course_code,
                 "download",
