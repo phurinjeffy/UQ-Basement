@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function Navbar() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
 
   // Load Google Fonts
@@ -19,6 +19,14 @@ function Navbar() {
     logout();
     navigate("/");
   };
+
+  // Use email prefix as username, fallback to 'U'
+  let username = "U";
+  try {
+    if (user && user.email) {
+      username = user.email.split("@")[0];
+    }
+  } catch {}
 
   return (
     <div className="navbar bg-gray-100 dark:bg-gray-800 shadow-md h-20 px-6 z-50">
@@ -62,8 +70,11 @@ function Navbar() {
             role="button"
             className="btn btn-ghost btn-circle avatar"
           >
-            <div className="w-10 h-10 rounded-full bg-neutral text-neutral-content flex items-center justify-center text-lg font-semibold">
-              SY
+            <div
+              className="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-400 flex items-center justify-center text-white font-bold"
+              style={{ fontSize: '1rem', lineHeight: '2.5rem' }}
+            >
+              {username[0]}
             </div>
           </div>
 
