@@ -11,6 +11,17 @@ app = FastAPI(
 # Include routers
 app.include_router(users.router, prefix="/api/v1")
 
+# CORS middleware setup
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Or specify your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Root endpoint
 @app.get("/")
 async def root():

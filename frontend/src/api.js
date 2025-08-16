@@ -1,7 +1,8 @@
 // frontend/src/api.js
 import axios from "axios";
 
-const API_BASE = "http://localhost:8000"; // Change if backend runs elsewhere
+
+const API_BASE = "http://localhost:8000/api/v1"; // Match backend router prefix
 
 export async function loginUser(email, password) {
     const res = await axios.post(`${API_BASE}/users/login`, { email, password });
