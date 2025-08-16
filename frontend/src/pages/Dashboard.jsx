@@ -11,8 +11,16 @@ const Dashboard = () => {
   // Fetch enrollments on mount
   useEffect(() => {
     async function fetchEnrollmentsAndDetails() {
-      const userId = "f8808c59-719c-4f7a-8ea5-ef372bdd700d";
+      let userId = "";
       try {
+        // Extract userId from JWT token in localStorage
+        const token = localStorage.getItem("token");
+        if (token) {
+          // Decode JWT (base64 decode payload)
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.user_id;
+        }
+        if (!userId) return;
         const enrollments = await getEnrollments(userId);
         // Fetch course details for each enrolled course
         const merged = await Promise.all(
@@ -55,9 +63,10 @@ const Dashboard = () => {
     // Connect to backend
     let userId = "";
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
-      if (user && user.id) {
-        userId = user.id;
+      const token = localStorage.getItem("token");
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        userId = payload.user_id;
       }
     } catch {}
     if (userId) {
