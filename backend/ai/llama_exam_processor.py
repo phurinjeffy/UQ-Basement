@@ -18,7 +18,21 @@ S3_ACCESS_KEY_ID = os.environ.get("S3_ACCESS_KEY_ID")
 S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY")
 S3_BUCKET = "pdfs"
 
-COURSE_CODE = "DECO2500"
+
+def get_course_code():
+    import sys
+
+    # Priority: command-line arg > env var > error
+    if len(sys.argv) > 1:
+        return sys.argv[1]
+    code = os.getenv("COURSE_CODE")
+    if code:
+        return code
+    raise ValueError(
+        "COURSE_CODE must be provided as an argument or environment variable."
+    )
+
+
 OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 MODEL_NAME = "qwen/qwen3-coder:free"
@@ -116,11 +130,12 @@ def openrouter_chat(prompt):
 # MAIN
 # --------------------------
 if __name__ == "__main__":
+    course_code = get_course_code()
     print("Reading past papers from S3...")
-    papers = read_past_paper_files_from_s3(COURSE_CODE)
+    papers = read_past_paper_files_from_s3(course_code)
 
     if not papers:
-        raise FileNotFoundError(f"No PDF files found in S3 for course {COURSE_CODE}")
+        raise FileNotFoundError(f"No PDF files found in S3 for course {course_code}")
 
     first_paper = papers[0]
     questions = preprocess_exam_text(first_paper)
@@ -195,7 +210,7 @@ if __name__ == "__main__":
     )
     json_str = re.sub(r",\s*([}\]])", r"\1", json_str)  # Remove trailing commas
 
-    filename = f"{COURSE_CODE}_mock.json"
+    filename = f"{course_code}_mock.json"
 
     try:
         result = json.loads(json_str)

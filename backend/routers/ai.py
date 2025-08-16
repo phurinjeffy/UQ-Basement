@@ -1,4 +1,3 @@
-from fastapi import BackgroundTasks
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 import sys
@@ -116,17 +115,15 @@ async def get_past_paper_pdf(course_code: str, filename: str):
         raise HTTPException(status_code=404, detail=f"File not found in S3: {e}")
 
 
-# MOCK EXAM PARTS
-@router.post("/ai/generate-mock/{course_code}")
-async def generate_mock_and_import(course_code: str):
+@router.post("/ai/generate-questions-json/{course_code}")
+async def generate_questions_json(course_code: str):
     """
-    For a given course code, run llama_exam_processor.py to generate mock exam JSON,
-    then import that JSON into the database using question_importer.py.
-    Returns logs from both steps.
+    Generate questions JSON for a given course code by running llama_exam_processor.py.
+    Returns logs and file path.
     """
     try:
-        # 1. Run llama_exam_processor.py
-        llama_proc = subprocess.run(
+        PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        proc = subprocess.run(
             [
                 sys.executable,
                 os.path.join(PROJECT_ROOT, "ai/llama_exam_processor.py"),
@@ -135,53 +132,22 @@ async def generate_mock_and_import(course_code: str):
             timeout=600,
             env={**os.environ, "COURSE_CODE": course_code},
         )
-        llama_stdout = llama_proc.stdout.decode()
-        llama_stderr = llama_proc.stderr.decode()
-        if llama_proc.returncode != 0:
+        stdout = proc.stdout.decode()
+        stderr = proc.stderr.decode()
+        filename = f"{course_code}_mock.json"
+        json_path = os.path.join(PROJECT_ROOT, filename)
+        if proc.returncode != 0:
             return {
                 "success": False,
-                "step": "llama_exam_processor",
-                "stdout": llama_stdout,
-                "stderr": llama_stderr,
+                "stdout": stdout,
+                "stderr": stderr,
+                "json_file": filename if os.path.exists(json_path) else None,
             }
-
-        # 2. Find the output JSON file (only check backend root)
-        json_file = os.path.join(PROJECT_ROOT, f"{course_code}_mock.json")
-        if not os.path.exists(json_file):
-            return {
-                "success": False,
-                "step": "find_json",
-                "error": f"Expected output file not found: {json_file}",
-                "llama_stdout": llama_stdout,
-                "llama_stderr": llama_stderr,
-            }
-
-        # 3. Run question_importer.py
-        importer_proc = subprocess.run(
-            [
-                sys.executable,
-                os.path.join(PROJECT_ROOT, "ai/question_importer.py"),
-                json_file,
-            ],
-            capture_output=True,
-            timeout=600,
-        )
-        importer_stdout = importer_proc.stdout.decode()
-        importer_stderr = importer_proc.stderr.decode()
-        if importer_proc.returncode != 0:
-            return {
-                "success": False,
-                "step": "question_importer",
-                "stdout": importer_stdout,
-                "stderr": importer_stderr,
-            }
-
         return {
             "success": True,
-            "llama_stdout": llama_stdout,
-            "llama_stderr": llama_stderr,
-            "importer_stdout": importer_stdout,
-            "importer_stderr": importer_stderr,
+            "stdout": stdout,
+            "stderr": stderr,
+            "json_file": filename if os.path.exists(json_path) else None,
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
