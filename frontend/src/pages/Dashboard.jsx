@@ -6,7 +6,14 @@ const Dashboard = () => {
     { id: 4, name: "COMP4601", title: "Software Architecture" },
   ];
 
-  const username = "Student";
+  // Use email prefix as username
+  let username = "Student";
+  try {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user && user.email) {
+      username = user.email.split("@")[0];
+    }
+  } catch {}
   const progressValue = 65;
   const recentActivity = [
     { type: "Mock Exam", course: "COMP3506", date: "2025-08-15", score: 82 },
@@ -28,7 +35,7 @@ const Dashboard = () => {
             {/* Profile Card */}
             <div className="bg-white dark:bg-gray-800 shadow rounded-xl p-6 flex flex-col items-center">
               <div className="w-20 h-20 rounded-full bg-blue-600 dark:bg-blue-400 flex items-center justify-center text-3xl font-bold text-white mb-3">
-                S
+                {username[0]}
               </div>
               <div className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-1">
                 {username}
