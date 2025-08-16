@@ -16,7 +16,12 @@ async def get_papers(course_code: str):
     """
     try:
         result = subprocess.run(
-            ["python3", "backend/ai/extractText.py", course_code, "download"],
+            [
+                "python3",
+                os.path.join(PROJECT_ROOT, "ai/extractText.py"),
+                course_code,
+                "download",
+            ],
             capture_output=True,
             timeout=300,
         )
