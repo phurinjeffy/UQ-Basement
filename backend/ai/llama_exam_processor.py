@@ -18,7 +18,6 @@ S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY")
 S3_BUCKET = "pdfs"
 
 COURSE_CODE = "DECO2500" 
-NUM_MOCK_QUESTIONS = 10
 OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 MODEL_NAME = "meta-llama/llama-3.2-3b-instruct:free"
@@ -156,13 +155,24 @@ if __name__ == "__main__":
     print(response)
 
     # Try to parse JSON
+    start = response.find("{")
+    end = response.rfind("}") + 1
+    json_str = response[start:end]
+    # Attempt to clean up common issues
+    json_str = json_str.replace("'", '"')
+    json_str = json_str.replace(",]", "]")
+    json_str = json_str.replace(",\n]", "\n]")
     try:
-        start = response.find("{")
-        end = response.rfind("}") + 1
-        result = json.loads(response[start:end].replace("'", '"'))
+        result = json.loads(json_str)
         output_file = f"{COURSE_CODE}_past_paper_analysis_with_mock.json"
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=2)
         print("Analysis + mock exam saved to:", output_file)
     except Exception as e:
         print("Failed to parse JSON:", e)
+        # Remove code block markers if present
+        cleaned_response = response.replace('```json', '').replace('```', '').strip()
+        raw_file = f"{COURSE_CODE}_mock_raw_response.json"
+        with open(raw_file, "w", encoding="utf-8") as f:
+            f.write(cleaned_response)
+        print(f"Raw AI response saved to: {raw_file}")
