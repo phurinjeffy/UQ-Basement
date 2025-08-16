@@ -166,7 +166,7 @@ def upload_questions_to_supabase(json_path, table_name="questions"):
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     questions = data.get("questions", [])
-    # Only keep specified columns
+    # Only keep specified columns, including options (as JSON if present)
     rows = []
     for q in questions:
         row = {
@@ -175,6 +175,8 @@ def upload_questions_to_supabase(json_path, table_name="questions"):
             "question_type": q.get("question_type", ""),
             "sample_answer": q.get("sample_answer", ""),
             "correct_answer": q.get("correct_answer", ""),
+            # Always include options key for all rows
+            "options": q.get("options", []) if q.get("options") is not None else [],
         }
         rows.append(row)
     # Insert in batches of 50 using Supabase REST API
