@@ -39,7 +39,12 @@ def openrouter_chat(prompt):
 
 
 def check_answers_with_ai(input_json, output_filename="checked_answers.json"):
-    answers = input_json["answers"]
+    # Accept both a list and a dict with 'answers' key
+    if isinstance(input_json, dict) and "answers" in input_json:
+        answers = input_json["answers"]
+    elif isinstance(input_json, list):
+        answers = input_json
+    # Build question list for prompt
     prompt = (
         "You are an academic assistant. For each user answer, check if it is correct. "
         "Return a JSON array with objects containing: id, question, userAnswer, user_id, quiz_id, result (correct/wrong), and realAnswer (the correct answer). "
@@ -50,9 +55,13 @@ def check_answers_with_ai(input_json, output_filename="checked_answers.json"):
         "Output format:\n"
         "[\n  { 'id': '...', 'question': '...', 'userAnswer': '...', 'user_id': '...', 'quiz_id': '...', 'result': 'correct', 'realAnswer': '...' }, ... ]\n]"
     )
-    # Build question list for prompt
     for a in answers:
-        prompt += f"\nID: {a.get('id', '')}\nQuestion: {a.get('question', '')}\nUser Answer: {a.get('user_answer', '')}\nUser ID: {a.get('user_id', '')}\nQuiz ID: {a.get('quiz_id', '')}"
+        if isinstance(a, dict):
+            prompt += f"\nID: {a.get('id', '')}\nQuestion: {a.get('question', '')}\nUser Answer: {a.get('user_answer', '')}\nUser ID: {a.get('user_id', '')}\nQuiz ID: {a.get('quiz_id', '')}"
+        elif isinstance(a, list) and len(a) >= 5:
+            prompt += f"\nID: {a[0]}\nQuestion: {a[1]}\nUser Answer: {a[2]}\nUser ID: {a[3]}\nQuiz ID: {a[4]}"
+        else:
+            prompt += f"\nID: \nQuestion: \nUser Answer: \nUser ID: \nQuiz ID: "
     print(f"Sending {len(answers)} answers to AI for checking...")
     response = openrouter_chat(prompt)
     print("Raw AI response:")
@@ -72,6 +81,28 @@ def check_answers_with_ai(input_json, output_filename="checked_answers.json"):
     json_str = re.sub(r",\s*([}\]])", r"\1", json_str)  # Remove trailing commas
     print("JSON string to be parsed:")
     print(json_str)
+    try:
+        checked = json.loads(json_str)
+        # Defensive: if not a list, wrap in list
+        if not isinstance(checked, list):
+            checked = [checked]
+        # Validate required fields for each answer
+        required_fields = ["id", "question", "userAnswer", "user_id", "quiz_id", "result", "realAnswer"]
+        valid_checked = []
+        for ans in checked:
+            if all(field in ans and ans[field] is not None and ans[field] != "" for field in required_fields):
+                valid_checked.append(ans)
+            else:
+                print(f"[WARNING] Skipping invalid checked answer: {ans}")
+        # Write to file
+        with open(output_filename, "w", encoding="utf-8") as f:
+            json.dump({"checked_answers": valid_checked}, f, ensure_ascii=False, indent=2)
+        print(f"Checked answers written to {output_filename}")
+    except Exception as e:
+        print(f"Error parsing AI response: {e}")
+        with open(output_filename, "w", encoding="utf-8") as f:
+            json.dump({"checked_answers": []}, f, ensure_ascii=False, indent=2)
+        print(f"Empty checked_answers written to {output_filename}")
     try:
         result = json.loads(json_str)
         # Post-process to ensure result is 'correct' or 'wrong'
@@ -96,7 +127,9 @@ def check_answers_with_ai(input_json, output_filename="checked_answers.json"):
 
 # Example usage:
 if __name__ == "__main__":
-    # Load answers from a file or dict
-    with open("user_answers.json", "r", encoding="utf-8") as f:
+    import sys
+    # Accept filename as argument, default to user_answers.json
+    input_filename = sys.argv[1] if len(sys.argv) > 1 else "user_answers.json"
+    with open(input_filename, "r", encoding="utf-8") as f:
         input_json = json.load(f)
     check_answers_with_ai(input_json)
