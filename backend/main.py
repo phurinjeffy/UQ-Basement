@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import users, courses, ai, questions
+from routers import users, courses, ai, questions, enrollments
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -13,6 +13,7 @@ app.include_router(users.router, prefix="/api/v1", tags=["Users"])
 app.include_router(courses.router, prefix="/api/v1", tags=["Courses"])
 app.include_router(ai.router, prefix="/api/v1", tags=["AI"])
 app.include_router(questions.router, prefix="/api/v1", tags=["Questions"])
+app.include_router(enrollments.router, prefix="/api/v1", tags=["Enrollments"])
 
 # CORS middleware setup
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,9 +23,8 @@ app.add_middleware(
     allow_origins=["*"],  # Or specify your frontend URL
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*", "Range"],  # Explicitly allow Range header for PDF streaming
 )
-
 
 # Root endpoint
 @app.get("/")

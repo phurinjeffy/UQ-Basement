@@ -4,7 +4,9 @@ import os
 import subprocess
 
 router = APIRouter()
-PAST_PAPERS_DIR = os.path.join(os.getcwd(), "past_papers")
+# Always use project root for past_papers dir
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PAST_PAPERS_DIR = os.path.join(PROJECT_ROOT, "past_papers")
 
 
 @router.post("/ai/get-papers/{course_code}")
@@ -14,7 +16,12 @@ async def get_papers(course_code: str):
     """
     try:
         result = subprocess.run(
-            ["python3", "backend/ai/extractText.py", course_code, "download"],
+            [
+                "python3",
+                os.path.join(PROJECT_ROOT, "ai/extractText.py"),
+                course_code,
+                "download",
+            ],
             capture_output=True,
             timeout=300,
         )
@@ -53,4 +60,9 @@ async def get_past_paper_pdf(course_code: str, filename: str):
     file_path = os.path.join(PAST_PAPERS_DIR, course_code, filename)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(file_path, media_type="application/pdf", filename=filename)
+    return FileResponse(
+        file_path,
+        media_type="application/pdf",
+        filename=filename,
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
+    )
