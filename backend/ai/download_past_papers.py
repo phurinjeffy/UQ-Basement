@@ -7,14 +7,12 @@ import tempfile
 import shutil
 import boto3
 from botocore.client import Config
-from urllib.parse import urlparse
 from selenium import webdriver
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from PyPDF2 import PdfReader
 
 import sys
 
@@ -24,7 +22,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # S3/Supabase config
-S3_ENDPOINT_URL = "https://hwcaroqjyelhfiqvuskq.storage.supabase.co/storage/v1/s3"
+S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL")
 S3_ACCESS_KEY_ID = os.environ.get("S3_ACCESS_KEY_ID")
 S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY")
 S3_BUCKET = "pdfs"  # Change to your bucket name if different
