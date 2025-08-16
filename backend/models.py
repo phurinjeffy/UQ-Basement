@@ -84,6 +84,8 @@ class EnrollmentCreate(BaseModel):
     semester: Optional[str] = Field(None, max_length=20, description="Semester (e.g., Fall, Spring)")
     year: Optional[int] = Field(None, ge=2000, le=2030, description="Academic year")
     grade: Optional[str] = Field(None, max_length=5, description="Grade received (e.g., A, B, C)")
+    exam_date: Optional[str] = Field(None, description="Date of the exam (YYYY-MM-DD)")
+    exam_time: Optional[str] = Field(None, description="Time of the exam (HH:MM, no timezone)")
 
 class EnrollmentUpdate(BaseModel):
     """Model for updating enrollment details"""

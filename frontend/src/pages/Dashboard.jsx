@@ -1,22 +1,44 @@
 import { useNavigate } from "react-router-dom";
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AddCourses from "../components/AddCourses.jsx";
+import { updateEnrollments, getEnrollments, fetchCourseById } from "../api.js";
 
 const Dashboard = () => {
   const [showAddCourses, setShowAddCourses] = useState(false);
-  const [courses, setCourses] = useState([
-    { id: 1, name: "DECO2500", title: "Human-Computer Interactions" },
-    { id: 2, name: "COMP3702", title: "Artificial Intelligence" },
-    { id: 3, name: "CSSE2310", title: "System Programming" },
-    { id: 4, name: "CSSE3200", title: "Software Process" },
-  ]);
+  const [courses, setCourses] = useState([]);
+  // Fetch enrollments on mount
+  useEffect(() => {
+    async function fetchEnrollmentsAndDetails() {
+      const userId = "f8808c59-719c-4f7a-8ea5-ef372bdd700d";
+      try {
+        const enrollments = await getEnrollments(userId);
+        // Fetch course details for each enrolled course
+        const merged = await Promise.all(enrollments.map(async (e) => {
+          let courseDetail = null;
+          try {
+            courseDetail = await fetchCourseById(e.course_id);
+          } catch {}
+          return {
+            id: e.course_id,
+            name: courseDetail?.course?.name,
+            title: courseDetail?.course?.course_title,
+            examDate: e.exam_date || "",
+            examTime: e.exam_time || ""
+          };
+        }));
+        setCourses(merged);
+      } catch (err) {
+        // Optionally handle error
+      }
+    }
+    fetchEnrollmentsAndDetails();
+  }, []);
 
   // Handler for confirming courses from AddCourses
-  const handleConfirmCourses = (newCourses) => {
+  const handleConfirmCourses = async (newCourses) => {
     setCourses(
       newCourses.map((c, idx) => ({
-        id: idx + 1,
+        id: c.id || idx + 1,
         name: c.name,
         title: c.course_title || c.title || "",
         examDate: c.examDate || "",
@@ -24,6 +46,17 @@ const Dashboard = () => {
       }))
     );
     setShowAddCourses(false);
+    // Connect to backend
+    let userId = "";
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (user && user.id) {
+        userId = user.id;
+      }
+    } catch {}
+    if (userId) {
+      await updateEnrollments(userId, newCourses);
+    }
   };
 
   // Use email prefix as username
@@ -174,7 +207,13 @@ const Dashboard = () => {
                   <div className="p-4">
                     <AddCourses
                       onConfirm={handleConfirmCourses}
-                      initialCourses={courses.map(c => ({ name: c.name, course_title: c.title }))}
+                      initialCourses={courses.map(c => ({
+                        id: c.id,
+                        name: c.name,
+                        course_title: c.title,
+                        examDate: c.examDate,
+                        examTime: c.examTime
+                      }))}
                     />
                   </div>
                 </div>
