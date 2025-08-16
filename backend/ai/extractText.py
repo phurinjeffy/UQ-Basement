@@ -3,12 +3,26 @@ import sys
 import time
 import glob
 import re
+import tempfile
+import shutil
+import boto3
+from botocore.client import Config
 from selenium import webdriver
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from PyPDF2 import PdfReader
+
+# Always use project root for past_papers dir (not used for downloads anymore)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# S3/Supabase config
+S3_ENDPOINT_URL = "https://hwcaroqjyelhfiqvuskq.storage.supabase.co/storage/v1/s3"
+S3_ACCESS_KEY_ID = os.environ.get("S3_ACCESS_KEY_ID")
+S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY")
+S3_BUCKET = "pdfs"  # Change to your bucket name if different
 
 BASE_URL = "https://www.library.uq.edu.au/exams/course/"
 
@@ -29,9 +43,25 @@ def clean_filename(course_code, original_name):
     return f"{course_code}_{semester}_{year}.txt"
 
 
+def upload_to_s3(file_path, s3_key):
+    session = boto3.session.Session()
+    s3 = session.client(
+        service_name="s3",
+        aws_access_key_id=S3_ACCESS_KEY_ID,
+        aws_secret_access_key=S3_SECRET_ACCESS_KEY,
+        endpoint_url=S3_ENDPOINT_URL,
+        config=Config(signature_version="s3v4"),
+        region_name="us-east-1",
+    )
+    with open(file_path, "rb") as f:
+        s3.upload_fileobj(f, S3_BUCKET, s3_key)
+    print(f"[S3] Uploaded {file_path} to {S3_BUCKET}/{s3_key}")
+
+
 def download_pdfs(course_code):
-    download_dir = os.path.join(os.getcwd(), "past_papers", course_code)
-    os.makedirs(download_dir, exist_ok=True)
+
+    # Use a temporary directory for downloads
+    download_dir = tempfile.mkdtemp(prefix=f"{course_code}_pdfs_")
 
     chrome_options = Options()
     chrome_options.add_argument("--start-maximized")
@@ -75,39 +105,25 @@ def download_pdfs(course_code):
         print(f"[{i}/{len(pdf_urls)}] Downloading: {os.path.basename(url)}")
         driver.get(url)
         time.sleep(5)  # adjust if downloads are slow
+        # After download, upload to S3, then delete local file
+        local_pdf = os.path.join(download_dir, os.path.basename(url))
+        if os.path.exists(local_pdf):
+            s3_key = f"{course_code}/{os.path.basename(url)}"
+            try:
+                upload_to_s3(local_pdf, s3_key)
+                os.remove(local_pdf)
+                print(f"[Local] Deleted {local_pdf}")
+            except Exception as e:
+                print(f"[S3] Upload failed for {local_pdf}: {e}")
+
+    # Clean up temp directory
+    shutil.rmtree(download_dir, ignore_errors=True)
+    print(f"[Temp] Removed temp download dir {download_dir}")
 
     driver.quit()
     print("[+] Chrome downloads triggered. Waiting for files to finish...")
 
     time.sleep(5)  # wait for downloads
-
-
-def extract_text_from_pdfs(course_code):
-    download_dir = os.path.join(os.getcwd(), "past_papers", course_code)
-    # Extract text and save with clean names
-    pdf_files = glob.glob(os.path.join(download_dir, "*.pdf"))
-    for pdf_file in pdf_files:
-        original_name = os.path.basename(pdf_file)
-        clean_name = clean_filename(course_code, original_name)
-        txt_path = os.path.join(download_dir, clean_name)
-        print(f"➡ Extracting {original_name} → {clean_name}")
-
-        try:
-            with open(pdf_file, "rb") as f:
-                reader = PdfReader(f)
-                text = "\n\n".join([page.extract_text() or "" for page in reader.pages])
-            with open(txt_path, "w", encoding="utf-8") as f:
-                f.write(text)
-            print(f"✅ Text saved: {txt_path}")
-        except Exception as e:
-            print(f"⚠ Failed to extract {original_name}: {e}")
-
-    print(f"\n[✓] All papers processed and saved in: {download_dir}")
-
-
-def download_and_extract(course_code):
-    download_pdfs(course_code)
-    extract_text_from_pdfs(course_code)
 
 
 if __name__ == "__main__":
@@ -116,11 +132,5 @@ if __name__ == "__main__":
     else:
         course = input("Course code (e.g., CSSE2310): ").strip().upper()
 
-    # Optional second argument: mode
-    mode = sys.argv[2] if len(sys.argv) > 2 else None
-    if mode == "download":
-        download_pdfs(course)
-    elif mode == "extract":
-        extract_text_from_pdfs(course)
-    else:
-        download_and_extract(course)
+    # Only support download mode now
+    download_pdfs(course)

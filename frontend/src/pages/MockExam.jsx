@@ -57,14 +57,6 @@ const MockExam = () => {
                   >
                     View PDF: {pdf}
                   </button>
-                  <a
-                    href={getPastPaperPdfUrl(courseId, pdf)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 underline text-sm"
-                  >
-                    Download
-                  </a>
                 </li>
               ))}
             </ul>
