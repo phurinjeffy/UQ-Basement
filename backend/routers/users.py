@@ -1,4 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
+import jwt
+from datetime import datetime, timedelta, timezone
+import os
 import httpx
 from typing import Optional, List
 from models import (
@@ -17,6 +20,11 @@ from config import (
     logger,
 )
 from uuid import UUID
+
+
+JWT_SECRET = os.environ.get("JWT_SECRET")
+JWT_ALGORITHM = "HS256"
+JWT_EXP_DELTA_SECONDS = 3600
 
 router = APIRouter()
 
@@ -127,7 +135,7 @@ async def create_user(user: UserCreate):
 
 @router.post("/users/login")
 async def login_user(login_data: UserLogin):
-    """Authenticate a user with email and password"""
+    """Authenticate a user with email and password, return JWT token"""
     try:
         async with httpx.AsyncClient() as client:
             # Get user by email (including password_hash)
@@ -163,9 +171,26 @@ async def login_user(login_data: UserLogin):
             if "password_hash" in user:
                 del user["password_hash"]
 
+            # Generate JWT token
+            payload = {
+                "user_id": user["id"],
+                "name": user.get("name", user.get("email")),
+                "exp": (datetime.now(timezone.utc) + timedelta(seconds=JWT_EXP_DELTA_SECONDS)).timestamp()
+            }
+            if not JWT_SECRET:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="JWT secret key not set in environment variables."
+                )
+            token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
             logger.info(f"User logged in successfully: {user['email']}")
 
-            return {"message": "Login successful", "user": user}
+            return {
+                "message": "Login successful",
+                "user": user,
+                "token": token
+            }
 
     except HTTPException:
         raise
