@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 import AddCourses from "../components/AddCourses.jsx";
 import { updateEnrollments, getEnrollments, fetchCourseById } from "../api.js";
+import Breadcrumbs from "../components/Breadcrumbs";
 
 const Dashboard = () => {
   const [showAddCourses, setShowAddCourses] = useState(false);
@@ -98,6 +99,16 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto py-10 px-4 lg:px-8">
+        <Breadcrumbs
+          routes={[
+            {
+              label: "Dashboard",
+              icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="h-4 w-4 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z" /></svg>
+              ),
+            },
+          ]}
+        />
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar: Profile, Progress, Stats */}
           <aside className="lg:col-span-1 space-y-8">

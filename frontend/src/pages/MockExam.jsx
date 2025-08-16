@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import Breadcrumbs from "../components/Breadcrumbs";
 import {
   getPapers,
   listPastPapers,
@@ -244,12 +245,13 @@ const MockExam = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto py-10 px-4 lg:px-8">
-        {/* Breadcrumbs (only for course pages) */}
-        <div className="breadcrumbs text-sm mb-6">
-          <ul>
-            <li>
-              <a href="/dashboard">
-                {/* Dashboard Icon */}
+        {/* Breadcrumbs (reusable component) */}
+        <Breadcrumbs
+          routes={[
+            {
+              label: "Dashboard",
+              to: "/dashboard",
+              icon: (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -262,13 +264,12 @@ const MockExam = () => {
                     strokeWidth="2"
                     d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"
                   />
-                </svg>{" "}
-                Dashboard
-              </a>
-            </li>
-            <li>
-              <span className="inline-flex items-center gap-2">
-                {/* Course Icon (Book) */}
+                </svg>
+              ),
+            },
+            {
+              label: courseInfo.code,
+              icon: (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -281,12 +282,11 @@ const MockExam = () => {
                     strokeWidth="2"
                     d="M4 5a2 2 0 012-2h12a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V5z"
                   />
-                </svg>{" "}
-                {courseInfo.code}
-              </span>
-            </li>
-          </ul>
-        </div>
+                </svg>
+              ),
+            },
+          ]}
+        />
 
         {/* Course Info Card */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6 mb-8 flex flex-col md:flex-row items-center gap-6">
@@ -669,6 +669,17 @@ const MockExam = () => {
                         return;
                       }
                       // Step 2: Upload questions to Supabase (create quiz)
+                      // Extract user_id from JWT token in localStorage
+                      let userId = "";
+                      try {
+                        const token = localStorage.getItem("token");
+                        if (token) {
+                          const payload = JSON.parse(atob(token.split(".")[1]));
+                          userId = payload.user_id;
+                        }
+                      } catch (error) {
+                        console.error("Failed to extract user ID from token:", error);
+                      }
                       const quizResp = await createQuizAndUploadQuestions({
                         course_code: courseId,
                         title: `Mock Exam for ${courseId}`,
@@ -676,6 +687,7 @@ const MockExam = () => {
                         description: "Generated mock exam",
                         topic: "test",
                         time_limit: 60,
+                        user_id: userId,
                       });
                       console.log("Quiz API response:", quizResp);
                       if (quizResp && quizResp.quiz) {

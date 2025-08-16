@@ -213,6 +213,7 @@ class QuizCreate(BaseModel):
     course_id: UUID = Field(..., description="Associated course ID - REQUIRED")
     topic: Optional[str] = Field(None, max_length=100, description="Quiz topic/category")
     time_limit: Optional[int] = Field(None, ge=1, description="Time limit in minutes")
+    user_id: UUID = Field(..., description="ID of the user who created the quiz")
 
 class QuizResponse(BaseModel):
     """Model for quiz response data"""
