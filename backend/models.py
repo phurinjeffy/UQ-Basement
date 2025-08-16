@@ -32,38 +32,49 @@ class UserResponse(BaseModel):
     created_at: str
     courses: Optional[List[dict]] = []
 
+# Updated Course Models to match UQ Library API structure exactly
 class CourseCreate(BaseModel):
-    """Model for creating a new course"""
-    course_code: str = Field(..., min_length=1, max_length=20, description="Course code (e.g., CS101)")
-    course_name: str = Field(..., min_length=1, max_length=200, description="Full course name")
-    description: Optional[str] = Field(None, max_length=1000, description="Course description")
-    credits: Optional[int] = Field(None, ge=1, le=10, description="Credit hours")
-    department: Optional[str] = Field(None, max_length=100, description="Department")
-    instructor: Optional[str] = Field(None, max_length=100, description="Instructor name")
+    """Model for creating a new course - matches UQ Library API structure"""
+    name: str = Field(..., min_length=1, max_length=20, description="Course code (e.g., CYBR7003)")
+    url: str = Field(..., description="UQ Library resource URL")
+    type: str = Field(..., description="Resource type (e.g., learning_resource)")
+    course_title: str = Field(..., min_length=1, max_length=200, description="Full course title")
+    campus: str = Field(..., description="Campus location (e.g., St Lucia)")
+    period: str = Field(..., description="Academic period (e.g., Semester 1 2026)")
 
 class CourseUpdate(BaseModel):
     """Model for updating course details"""
-    course_code: Optional[str] = Field(None, min_length=1, max_length=20, description="Course code")
-    course_name: Optional[str] = Field(None, min_length=1, max_length=200, description="Full course name")
-    description: Optional[str] = Field(None, max_length=1000, description="Course description")
-    credits: Optional[int] = Field(None, ge=1, le=10, description="Credit hours")
-    department: Optional[str] = Field(None, max_length=100, description="Department")
-    instructor: Optional[str] = Field(None, max_length=100, description="Instructor name")
+    name: Optional[str] = Field(None, min_length=1, max_length=20, description="Course code")
+    url: Optional[str] = Field(None, description="UQ Library resource URL")
+    type: Optional[str] = Field(None, description="Resource type")
+    course_title: Optional[str] = Field(None, min_length=1, max_length=200, description="Full course title")
+    campus: Optional[str] = Field(None, description="Campus location")
+    period: Optional[str] = Field(None, description="Academic period")
 
 class CourseResponse(BaseModel):
     """Model for course response data"""
     id: UUID
-    course_code: str
-    course_name: str
-    description: Optional[str] = None
-    credits: Optional[int] = None
-    department: Optional[str] = None
-    instructor: Optional[str] = None
+    name: str
+    url: str
+    type: str
+    course_title: str
+    campus: str
+    period: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True
+
+# UQ Library specific model for batch operations
+class UQCourse(BaseModel):
+    """Model that exactly matches UQ Library API response structure"""
+    name: str = Field(..., description="Course code from UQ API")
+    url: str = Field(..., description="UQ Library resource URL")
+    type: str = Field(..., description="Resource type from UQ API")
+    course_title: str = Field(..., description="Course title from UQ API")
+    campus: str = Field(..., description="Campus from UQ API")
+    period: str = Field(..., description="Period from UQ API")
 
 # Enrollment Models (Many-to-Many relationship)
 class EnrollmentCreate(BaseModel):
@@ -93,10 +104,27 @@ class EnrollmentResponse(BaseModel):
     class Config:
         from_attributes = True
 
+# API Response Models
+class SyncResponse(BaseModel):
+    """Model for sync operation responses"""
+    message: str
+    synced_courses: List[dict]
+    skipped_courses: List[dict]
+    errors: List[str]
+    total_processed: int
+
+class BatchCreateResponse(BaseModel):
+    """Model for batch create operation responses"""
+    message: str
+    synced_courses: List[dict]
+    skipped_courses: List[dict]
+    errors: List[str]
+    total_processed: int
+
 # Legacy models for backward compatibility (if needed)
 class CourseEnrollment(BaseModel):
     """Legacy model for course enrollment (backward compatibility)"""
-    course_code: str = Field(..., min_length=1, max_length=20, description="Course code")
-    course_name: str = Field(..., min_length=1, max_length=200, description="Full course name")
+    name: str = Field(..., min_length=1, max_length=20, description="Course code")
+    course_title: str = Field(..., min_length=1, max_length=200, description="Full course title")
     semester: Optional[str] = Field(None, max_length=20, description="Semester")
     year: Optional[int] = Field(None, ge=2000, le=2030, description="Academic year")
