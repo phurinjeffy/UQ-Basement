@@ -3,7 +3,6 @@ import AddCourses from "../components/AddCourses";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-
 function Home() {
   const [isSignup, setIsSignup] = useState(false);
   const [form, setForm] = useState({
@@ -46,8 +45,8 @@ function Home() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-base-200 px-4">
       <div className="hero bg-base-100 dark:bg-gray-800 rounded-2xl shadow-2xl p-10 max-w-4xl w-full mx-auto flex flex-col lg:flex-row gap-10 transition-colors">
-  {/* Always show login/signup, redirect handled by PrivateRoute */}
-  {true ? (
+        {/* Always show login/signup, redirect handled by PrivateRoute */}
+        {true ? (
           <>
             <div className="flex-1 text-center lg:text-left">
               <h1
