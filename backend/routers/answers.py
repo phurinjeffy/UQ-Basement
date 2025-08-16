@@ -23,7 +23,7 @@ class Answer(BaseModel):
     question: str
     user_answer: str
 
-@router.post("/")
+@router.post("/add-answer")
 async def add_answer(answer: Answer):
     """Add a user answer to Supabase"""
     try:
@@ -42,7 +42,7 @@ async def add_answer(answer: Answer):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/all")
+@router.get("/all/answers")
 async def get_answers():
     """Get all answers from Supabase"""
     try:
