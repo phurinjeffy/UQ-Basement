@@ -18,7 +18,7 @@ const Dashboard = () => {
       newCourses.map((c, idx) => ({
         id: idx + 1,
         name: c.name,
-        title: c.course_title || c.title || ""
+        title: c.course_title || c.title || "",
       }))
     );
     setShowAddCourses(false);
@@ -145,7 +145,12 @@ const Dashboard = () => {
               <div className="flex flex-wrap gap-3">
                 <button className="btn btn-primary">Start Mock Exam</button>
                 <button className="btn btn-outline">Review Past Papers</button>
-                <button className="btn btn-outline" onClick={() => setShowAddCourses(true)}>Add New Course</button>
+                <button
+                  className="btn btn-outline"
+                  onClick={() => setShowAddCourses(true)}
+                >
+                  Add New Course
+                </button>
                 {showAddCourses && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
                     <div className="relative bg-base-100 rounded-xl shadow-lg w-full max-w-md mx-auto p-0">
@@ -159,7 +164,10 @@ const Dashboard = () => {
                       <div className="p-4">
                         <AddCourses
                           onConfirm={handleConfirmCourses}
-                          initialCourses={courses.map(c => ({ name: c.name, course_title: c.title }))}
+                          initialCourses={courses.map((c) => ({
+                            name: c.name,
+                            course_title: c.title,
+                          }))}
                         />
                       </div>
                     </div>

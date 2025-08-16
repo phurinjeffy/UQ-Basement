@@ -12,6 +12,7 @@ from PyPDF2 import PdfReader
 
 BASE_URL = "https://www.library.uq.edu.au/exams/course/"
 
+
 def clean_filename(course_code, original_name):
     """
     Convert 'Semester_Two_Examinations_2024_CSSE2310.pdf'
@@ -34,11 +35,14 @@ def download_pdfs(course_code):
 
     chrome_options = Options()
     chrome_options.add_argument("--start-maximized")
-    chrome_options.add_experimental_option("prefs", {
-        "plugins.always_open_pdf_externally": True,
-        "download.prompt_for_download": False,
-        "download.default_directory": download_dir
-    })
+    chrome_options.add_experimental_option(
+        "prefs",
+        {
+            "plugins.always_open_pdf_externally": True,
+            "download.prompt_for_download": False,
+            "download.default_directory": download_dir,
+        },
+    )
 
     driver = webdriver.Chrome(options=chrome_options)
     wait = WebDriverWait(driver, 180)
@@ -58,7 +62,9 @@ def download_pdfs(course_code):
     print("[i] Waiting for UQ login + Duo Mobile authentication...")
 
     # Wait until at least one PDF link appears
-    pdf_elements = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "a[href$='.pdf']")))
+    pdf_elements = wait.until(
+        EC.presence_of_all_elements_located((By.CSS_SELECTOR, "a[href$='.pdf']"))
+    )
     print(f"[✓] Login detected. Found {len(pdf_elements)} PDF links.")
 
     # Get PDF URLs
@@ -74,6 +80,7 @@ def download_pdfs(course_code):
     print("[+] Chrome downloads triggered. Waiting for files to finish...")
 
     time.sleep(5)  # wait for downloads
+
 
 def extract_text_from_pdfs(course_code):
     download_dir = os.path.join(os.getcwd(), "past_papers", course_code)
@@ -96,6 +103,7 @@ def extract_text_from_pdfs(course_code):
             print(f"⚠ Failed to extract {original_name}: {e}")
 
     print(f"\n[✓] All papers processed and saved in: {download_dir}")
+
 
 def download_and_extract(course_code):
     download_pdfs(course_code)
