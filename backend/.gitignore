@@ -2,3 +2,4 @@ past_papers/
 /venv
 .env
 __pycache__/
+.DS_Store
