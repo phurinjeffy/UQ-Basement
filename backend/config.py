@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 import os
 from passlib.context import CryptContext
 import logging
