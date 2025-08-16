@@ -160,7 +160,7 @@ async def generate_questions_json(course_code: str):
 import requests
 
 
-def upload_questions_to_supabase(json_path, table_name="questions"):
+def upload_questions_to_supabase(json_path, quiz_id, table_name="questions"):
     if not SUPABASE_URL or not SUPABASE_KEY:
         return False, "Supabase credentials not set."
     with open(json_path, "r", encoding="utf-8") as f:
@@ -175,8 +175,8 @@ def upload_questions_to_supabase(json_path, table_name="questions"):
             "question_type": q.get("question_type", ""),
             "sample_answer": q.get("sample_answer", ""),
             "correct_answer": q.get("correct_answer", ""),
-            # Always include options key for all rows
             "options": q.get("options", []) if q.get("options") is not None else [],
+            "quiz_id": quiz_id,
         }
         rows.append(row)
     # Insert in batches of 50 using Supabase REST API
@@ -198,14 +198,16 @@ def upload_questions_to_supabase(json_path, table_name="questions"):
     return True, f"Uploaded {len(rows)} questions to Supabase."
 
 
+from fastapi import Query
+
 @router.post("/ai/upload-questions-to-supabase/{course_code}")
-async def upload_questions_to_supabase_endpoint(course_code: str):
+async def upload_questions_to_supabase_endpoint(course_code: str, quiz_id: str = Query(..., description="Quiz UUID to assign to all questions")):
     """
-    Convert {COURSE_CODE}_mock.json to rows and upload to Supabase 'questions' table with specified columns.
+    Convert {COURSE_CODE}_mock.json to rows and upload to Supabase 'questions' table with specified columns, setting quiz_id for all questions.
     """
     filename = f"{course_code}_mock.json"
     json_path = os.path.join(PROJECT_ROOT, filename)
     if not os.path.exists(json_path):
         return {"success": False, "error": f"JSON file not found: {json_path}"}
-    ok, msg = upload_questions_to_supabase(json_path)
+    ok, msg = upload_questions_to_supabase(json_path, quiz_id=quiz_id)
     return {"success": ok, "message": msg}
