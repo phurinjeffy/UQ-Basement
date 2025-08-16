@@ -4,7 +4,9 @@ import os
 import subprocess
 
 router = APIRouter()
-PAST_PAPERS_DIR = os.path.join(os.getcwd(), "past_papers")
+# Always use project root for past_papers dir
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PAST_PAPERS_DIR = os.path.join(PROJECT_ROOT, "backend/past_papers")
 
 
 @router.post("/ai/get-papers/{course_code}")
