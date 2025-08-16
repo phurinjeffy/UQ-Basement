@@ -23,6 +23,10 @@ const MockExam = () => {
   const [pastPapers, setPastPapers] = useState([]);
   const [pdfView, setPdfView] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [tab, setTab] = useState("pastPapers");
+  const [mockExams, setMockExams] = useState([]); // Placeholder for generated exams
+  const [generating, setGenerating] = useState(false);
+  const [mockError, setMockError] = useState("");
 
   const fetchPapers = async () => {
     setDownloading(true);
@@ -74,117 +78,108 @@ const MockExam = () => {
           </div>
         </div>
 
-        {/* Past Papers Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Past Papers</h2>
-            <button
-              className="btn btn-secondary"
-              onClick={fetchPapers}
-              disabled={downloading}
-            >
-              {downloading ? (
-                <span className="flex items-center gap-2">
-                  <svg
-                    className="animate-spin h-4 w-4 mr-1"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v8z"
-                    />
-                  </svg>{" "}
-                  Downloading...
-                </span>
-              ) : (
-                "Get Past Papers"
-              )}
-            </button>
-          </div>
-          {error && <div className="text-red-500 mb-2">{error}</div>}
-          {pastPapers.length === 0 ? (
-            <div className="text-gray-500">
-              No past papers found for this course.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {pastPapers.map((pdf) => {
-                const meta = getPaperMeta(pdf);
-                return (
-                  <div
-                    key={pdf}
-                    className="bg-white dark:bg-gray-700 rounded-lg shadow p-4 flex flex-col gap-2 border border-gray-100 dark:border-gray-600"
-                  >
-                    <div className="flex items-center gap-2">
-                      <svg
-                        className="w-6 h-6 text-red-500"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>
-                      <span className="font-semibold">
-                        {meta.year} {meta.semester}
-                      </span>
-                    </div>
-                    <div className="truncate text-gray-700 dark:text-gray-200 text-sm mb-2">
-                      {meta.name}
-                    </div>
-                    <button
-                      className="btn btn-sm btn-outline mt-auto"
-                      onClick={() => {
-                        setPdfView(pdf);
-                        setShowModal(true);
-                      }}
-                    >
-                      View PDF
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+        {/* Tabs */}
+        <div className="flex gap-4 mb-8 border-b border-gray-200 dark:border-gray-700">
+          <button
+            className={`px-4 py-2 font-semibold focus:outline-none border-b-2 transition-all ${tab === "pastPapers" ? "border-indigo-500 text-indigo-700 dark:text-indigo-300" : "border-transparent text-gray-500 dark:text-gray-400"}`}
+            onClick={() => setTab("pastPapers")}
+          >
+            Past Papers
+          </button>
+          <button
+            className={`px-4 py-2 font-semibold focus:outline-none border-b-2 transition-all ${tab === "mockExams" ? "border-indigo-500 text-indigo-700 dark:text-indigo-300" : "border-transparent text-gray-500 dark:text-gray-400"}`}
+            onClick={() => setTab("mockExams")}
+          >
+            Mock Exams
+          </button>
         </div>
+
+        {/* Tab Content */}
+        {tab === "pastPapers" && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Past Papers</h2>
+              <button
+                className="btn btn-secondary"
+                onClick={fetchPapers}
+                disabled={downloading}
+              >
+                {downloading ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4 mr-1" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg> Downloading...
+                  </span>
+                ) : "Get Past Papers"}
+              </button>
+            </div>
+            {error && <div className="text-red-500 mb-2">{error}</div>}
+            {pastPapers.length === 0 ? (
+              <div className="text-gray-500">No past papers found for this course.</div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {pastPapers.map((pdf) => {
+                  const meta = getPaperMeta(pdf);
+                  return (
+                    <div key={pdf} className="bg-white dark:bg-gray-700 rounded-lg shadow p-4 flex flex-col gap-2 border border-gray-100 dark:border-gray-600">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                        <span className="font-semibold">{meta.year} {meta.semester}</span>
+                      </div>
+                      <div className="truncate text-gray-700 dark:text-gray-200 text-sm mb-2">{meta.name}</div>
+                      <button className="btn btn-sm btn-outline mt-auto" onClick={() => { setPdfView(pdf); setShowModal(true); }}>View PDF</button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === "mockExams" && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Mock Exams</h2>
+              <button
+                className="btn btn-secondary"
+                onClick={() => { setGenerating(true); setMockError(""); setTimeout(() => { setMockExams([...(mockExams || []), { name: `Mock Exam ${mockExams.length + 1}`, date: new Date().toLocaleString() }]); setGenerating(false); }, 1500); }}
+                disabled={generating}
+              >
+                {generating ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4 mr-1" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg> Generating...
+                  </span>
+                ) : "Generate Mock Exam"}
+              </button>
+            </div>
+            {mockError && <div className="text-red-500 mb-2">{mockError}</div>}
+            {(!mockExams || mockExams.length === 0) ? (
+              <div className="text-gray-500">No mock exams generated yet.</div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {mockExams.map((exam, idx) => (
+                  <div key={idx} className="bg-white dark:bg-gray-700 rounded-lg shadow p-4 flex flex-col gap-2 border border-gray-100 dark:border-gray-600">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                      <span className="font-semibold">{exam.name}</span>
+                    </div>
+                    <div className="truncate text-gray-700 dark:text-gray-200 text-sm mb-2">Generated: {exam.date}</div>
+                    <button className="btn btn-sm btn-outline mt-auto" disabled>View (Coming Soon)</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Modal PDF Viewer - Full Screen */}
         {showModal && pdfView && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">
             <div className="absolute inset-0 flex flex-col">
               <div className="flex justify-end p-4">
-                <button
-                  className="btn btn-error btn-lg text-lg px-6 py-2 rounded shadow-lg"
-                  onClick={() => { setShowModal(false); setPdfView(null); }}
-                  aria-label="Close PDF Viewer"
-                >
-                  ✕ Close
-                </button>
+                <button className="btn btn-error btn-lg text-lg px-6 py-2 rounded shadow-lg" onClick={() => { setShowModal(false); setPdfView(null); }} aria-label="Close PDF Viewer">✕ Close</button>
               </div>
               <div className="flex-1 flex flex-col items-center justify-center">
-                <div className="mb-2 font-semibold text-center text-white text-lg bg-black bg-opacity-40 px-4 py-2 rounded">
-                  {pdfView}
-                </div>
-                <iframe
-                  src={getPastPaperPdfUrl(courseId, pdfView)}
-                  title={pdfView}
-                  className="w-full h-full flex-1 border-none rounded-b-lg bg-white dark:bg-gray-900"
-                  style={{ minHeight: '80vh' }}
-                />
+                <div className="mb-2 font-semibold text-center text-white text-lg bg-black bg-opacity-40 px-4 py-2 rounded">{pdfView}</div>
+                <iframe src={getPastPaperPdfUrl(courseId, pdfView)} title={pdfView} className="w-full h-full flex-1 border-none rounded-b-lg bg-white dark:bg-gray-900" style={{ minHeight: '80vh' }} />
               </div>
             </div>
           </div>
