@@ -246,21 +246,10 @@ async def create_quiz_and_upload_questions(
     if not os.path.exists(json_path):
         return {"success": False, "error": f"JSON file not found: {json_path}"}
     ok, msg = upload_questions_to_supabase(json_path, quiz_id=quiz_id)
+    # Delete the local JSON file after upload
+    if ok and os.path.exists(json_path):
+        try:
+            os.remove(json_path)
+        except Exception as e:
+            msg += f" (Warning: could not delete local file: {e})"
     return {"success": ok, "quiz": quiz, "message": msg}
-
-
-
-@router.post("/ai/upload-questions-to-supabase/{course_code}")
-async def upload_questions_to_supabase_endpoint(
-    course_code: str,
-    quiz_id: str = Query(..., description="Quiz UUID to assign to all questions"),
-):
-    """
-    Convert {COURSE_CODE}_mock.json to rows and upload to Supabase 'questions' table with specified columns, setting quiz_id for all questions.
-    """
-    filename = f"{course_code}_mock.json"
-    json_path = os.path.join(PROJECT_ROOT, filename)
-    if not os.path.exists(json_path):
-        return {"success": False, "error": f"JSON file not found: {json_path}"}
-    ok, msg = upload_questions_to_supabase(json_path, quiz_id=quiz_id)
-    return {"success": ok, "message": msg}
