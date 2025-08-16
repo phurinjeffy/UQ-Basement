@@ -8,6 +8,7 @@ import {
   fetchEnrollmentDetails,
   createQuizAndUploadQuestions,
   fetchCourseByCode,
+  generateQuestionsJson,
 } from "../api";
 
 const getPaperMeta = (filename) => {
@@ -470,28 +471,40 @@ const MockExam = () => {
                     // Fetch course details to get UUID by code
                     const courseDetails = await fetchCourseByCode(courseId);
                     const courseUUID = courseDetails.id;
-                    const quizResp = await createQuizAndUploadQuestions({
-                      course_code: courseId,
-                      title: `Mock Exam for ${courseId}`,
-                      course_id: courseUUID,
-                      description: "Generated mock exam",
-                      topic: "test",
-                      time_limit: 60,
-                    });
-                    console.log("Quiz API response:", quizResp);
-                    if (quizResp && quizResp.quiz) {
-                      setMockExams([...(mockExams || []), quizResp.quiz]);
-                    } else if (
-                      quizResp &&
-                      quizResp.success === false &&
-                      quizResp.error
-                    ) {
-                      setMockError(quizResp.error);
-                    } else {
-                      setMockError(
-                        "Quiz was not created. Please try again or check backend logs."
-                      );
-                    }
+                      // Step 1: Generate questions JSON via backend API
+                      const genJsonResp = await generateQuestionsJson(courseId);
+                      if (!genJsonResp.success) {
+                        setMockError(
+                          genJsonResp.error ||
+                          genJsonResp.stderr ||
+                          "Failed to generate questions JSON."
+                        );
+                        setGenerating(false);
+                        return;
+                      }
+                      // Step 2: Upload questions to Supabase (create quiz)
+                      const quizResp = await createQuizAndUploadQuestions({
+                        course_code: courseId,
+                        title: `Mock Exam for ${courseId}`,
+                        course_id: courseUUID,
+                        description: "Generated mock exam",
+                        topic: "test",
+                        time_limit: 60,
+                      });
+                      console.log("Quiz API response:", quizResp);
+                      if (quizResp && quizResp.quiz) {
+                        setMockExams([...(mockExams || []), quizResp.quiz]);
+                      } else if (
+                        quizResp &&
+                        quizResp.success === false &&
+                        quizResp.error
+                      ) {
+                        setMockError(quizResp.error);
+                      } else {
+                        setMockError(
+                          "Quiz was not created. Please try again or check backend logs."
+                        );
+                      }
                   } catch (err) {
                     setMockError(
                       err.response?.data?.detail ||

@@ -120,6 +120,17 @@ export async function createQuizAndUploadQuestions({ course_code, title, course_
     }
 }
 
+// Generate questions JSON for a course
+export async function generateQuestionsJson(course_code) {
+    try {
+        const res = await axios.post(`${API_BASE}/ai/generate-questions-json/${course_code}`);
+        return res.data;
+    } catch (err) {
+        console.error("Generate questions JSON error:", err.response?.data || err);
+        throw err;
+    }
+}
+
 // Fetch course details by code (e.g., DECO2500)
 export async function fetchCourseByCode(courseCode) {
     const res = await axios.get(`${API_BASE}/courses/search-by-code`, {
