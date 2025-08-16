@@ -41,3 +41,18 @@ export function getPastPaperPdfUrl(courseCode, filename) {
     // Returns direct URL to download/view PDF
     return `${API_BASE}/ai/past-papers/${courseCode}/${filename}`;
 }
+
+export async function fetchCourses(hint = "") {
+    const params = {
+      limit: 6,
+      offset: 0,
+      include_enrollment_count: false,
+    };
+  
+    if (hint) {
+      params.name = hint;
+    }
+  
+    const res = await axios.get(`${API_BASE}/courses`, { params });
+    return res.data.courses || [];
+  }
