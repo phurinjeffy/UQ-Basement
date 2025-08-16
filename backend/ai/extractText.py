@@ -127,8 +127,14 @@ def download_pdfs(course_code):
     )
     print(f"[✓] Login detected. Found {len(pdf_elements)} PDF links.")
 
-    # Get PDF URLs
-    pdf_urls = [el.get_attribute("href") for el in pdf_elements]
+    # Get PDF URLs immediately to avoid stale element references
+    pdf_urls = []
+    for i, el in enumerate(pdf_elements):
+        try:
+            href = el.get_attribute("href")
+            pdf_urls.append(href)
+        except Exception as e:
+            print(f"[!] Skipping a stale PDF element at index {i}: {e}")
 
     # Extract cookies from the visible browser
     cookies = driver.get_cookies()
