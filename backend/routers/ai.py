@@ -1,3 +1,4 @@
+from fastapi import BackgroundTasks
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 import sys
@@ -15,7 +16,7 @@ router = APIRouter()
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # S3/Supabase config
-S3_ENDPOINT_URL = "https://hwcaroqjyelhfiqvuskq.storage.supabase.co/storage/v1/s3"
+S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL")
 S3_ACCESS_KEY_ID = os.environ.get("S3_ACCESS_KEY_ID")
 S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY")
 S3_BUCKET = "pdfs"  # Change to your bucket name if different
@@ -113,3 +114,74 @@ async def get_past_paper_pdf(course_code: str, filename: str):
         )
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"File not found in S3: {e}")
+
+
+# MOCK EXAM PARTS
+@router.post("/ai/generate-mock/{course_code}")
+async def generate_mock_and_import(course_code: str):
+    """
+    For a given course code, run llama_exam_processor.py to generate mock exam JSON,
+    then import that JSON into the database using question_importer.py.
+    Returns logs from both steps.
+    """
+    try:
+        # 1. Run llama_exam_processor.py
+        llama_proc = subprocess.run(
+            [
+                sys.executable,
+                os.path.join(PROJECT_ROOT, "ai/llama_exam_processor.py"),
+            ],
+            capture_output=True,
+            timeout=600,
+            env={**os.environ, "COURSE_CODE": course_code},
+        )
+        llama_stdout = llama_proc.stdout.decode()
+        llama_stderr = llama_proc.stderr.decode()
+        if llama_proc.returncode != 0:
+            return {
+                "success": False,
+                "step": "llama_exam_processor",
+                "stdout": llama_stdout,
+                "stderr": llama_stderr,
+            }
+
+        # 2. Find the output JSON file (only check backend root)
+        json_file = os.path.join(PROJECT_ROOT, f"{course_code}_mock.json")
+        if not os.path.exists(json_file):
+            return {
+                "success": False,
+                "step": "find_json",
+                "error": f"Expected output file not found: {json_file}",
+                "llama_stdout": llama_stdout,
+                "llama_stderr": llama_stderr,
+            }
+
+        # 3. Run question_importer.py
+        importer_proc = subprocess.run(
+            [
+                sys.executable,
+                os.path.join(PROJECT_ROOT, "ai/question_importer.py"),
+                json_file,
+            ],
+            capture_output=True,
+            timeout=600,
+        )
+        importer_stdout = importer_proc.stdout.decode()
+        importer_stderr = importer_proc.stderr.decode()
+        if importer_proc.returncode != 0:
+            return {
+                "success": False,
+                "step": "question_importer",
+                "stdout": importer_stdout,
+                "stderr": importer_stderr,
+            }
+
+        return {
+            "success": True,
+            "llama_stdout": llama_stdout,
+            "llama_stderr": llama_stderr,
+            "importer_stdout": importer_stdout,
+            "importer_stderr": importer_stderr,
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
