@@ -99,23 +99,43 @@ const MockExam = () => {
     }
   }, [showModal]);
 
+  const [noPapers, setNoPapers] = useState(false);
+  // Use a ref to track if a download is in progress, so tab switches don't reset the state
+  const downloadingRef = useRef(false);
   const fetchPapers = async () => {
     setDownloading(true);
+    downloadingRef.current = true;
     setError("");
+    setNoPapers(false);
     try {
-      await getPapers(courseId);
+      const res = await getPapers(courseId);
+      if (res?.no_papers) {
+        setNoPapers(true);
+        setPastPapers([]);
+        setError(`No past papers found for this course.`);
+        setDownloading(false);
+        downloadingRef.current = false;
+        return;
+      }
       const papers = await listPastPapers(courseId);
       setPastPapers(papers);
     } catch (e) {
       setError("Failed to download past papers. Try again later.");
     }
     setDownloading(false);
+    downloadingRef.current = false;
   };
 
   useEffect(() => {
+    setNoPapers(false); // Only reset on course change
+    setDownloading(downloadingRef.current); // Restore downloading state on mount/tab switch
     listPastPapers(courseId)
-      .then(setPastPapers)
-      .catch(() => setPastPapers([]));
+      .then((papers) => {
+        setPastPapers(papers);
+      })
+      .catch(() => {
+        setPastPapers([]);
+      });
   }, [courseId]);
 
   useEffect(() => {
@@ -231,6 +251,7 @@ const MockExam = () => {
                 : "border-transparent text-gray-500 dark:text-gray-400"
             }`}
             onClick={() => setTab("pastPapers")}
+            disabled={false}
           >
             Past Papers
           </button>
@@ -239,8 +260,11 @@ const MockExam = () => {
               tab === "mockExams"
                 ? "border-indigo-500 text-indigo-700 dark:text-indigo-300"
                 : "border-transparent text-gray-500 dark:text-gray-400"
+            } ${
+              pastPapers.length === 0 ? "opacity-50 cursor-not-allowed" : ""
             }`}
-            onClick={() => setTab("mockExams")}
+            onClick={() => pastPapers.length > 0 && setTab("mockExams")}
+            disabled={pastPapers.length === 0}
           >
             Mock Exams
           </button>
@@ -254,7 +278,7 @@ const MockExam = () => {
               <button
                 className="btn btn-secondary"
                 onClick={fetchPapers}
-                disabled={downloading}
+                disabled={downloading || noPapers}
               >
                 {downloading ? (
                   <span className="flex items-center gap-2">
@@ -276,16 +300,24 @@ const MockExam = () => {
                         fill="currentColor"
                         d="M4 12a8 8 0 018-8v8z"
                       />
-                    </svg>{" "}
+                    </svg>
                     Downloading...
                   </span>
+                ) : noPapers ? (
+                  <span>No Past Papers</span>
                 ) : (
-                  "Get Past Papers"
+                  <span>Get Past Papers</span>
                 )}
               </button>
             </div>
-            {error && <div className="text-red-500 mb-2">{error}</div>}
-            {pastPapers.length === 0 ? (
+            {error && !noPapers && (
+              <div className="text-red-500 mb-2">{error}</div>
+            )}
+            {noPapers ? (
+              <div className="text-gray-500">
+                No past papers found for this course.
+              </div>
+            ) : pastPapers.length === 0 ? (
               <div className="text-gray-500">
                 No past papers found for this course.
               </div>
@@ -378,7 +410,7 @@ const MockExam = () => {
                         fill="currentColor"
                         d="M4 12a8 8 0 018-8v8z"
                       />
-                    </svg>{" "}
+                    </svg>
                     Generating...
                   </span>
                 ) : (
