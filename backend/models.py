@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List
+from datetime import datetime
 
 class UserCreate(BaseModel):
     email: str
@@ -35,3 +36,8 @@ class CourseEnrollment(BaseModel):
     course_name: str
     semester: str
     year: int
+
+class CourseEnrollmentResponse(CourseEnrollment):
+    id: str
+    user_id: str
+    enrolled_at: datetime
