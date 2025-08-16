@@ -91,11 +91,25 @@ def download_pdfs(course_code):
         },
     )
     driver = webdriver.Chrome(options=chrome_options)
-    wait = WebDriverWait(driver, 180)
+    wait = WebDriverWait(driver, 60)
 
     course_url = f"{BASE_URL}{course_code}"
     print(f"[+] Opening course page: {course_url}")
     driver.get(course_url)
+
+    # Check for PDF links BEFORE login/authentication
+    try:
+        pdf_elements_pre = driver.find_elements(By.CSS_SELECTOR, "a[href$='.pdf']")
+        if not pdf_elements_pre:
+            print(f"[!] No past papers found for {course_code}. Exiting early.")
+            driver.quit()
+            shutil.rmtree(download_dir, ignore_errors=True)
+            return False  # Indicate no past papers
+    except Exception as e:
+        print(f"[!] Error checking for PDFs: {e}")
+        driver.quit()
+        shutil.rmtree(download_dir, ignore_errors=True)
+        return False
 
     # Click login button
     try:

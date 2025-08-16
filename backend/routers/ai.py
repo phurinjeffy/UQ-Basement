@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 import sys
-sys.stdout.reconfigure(encoding='utf-8')
+
+sys.stdout.reconfigure(encoding="utf-8")
 
 import os
 import subprocess
@@ -24,6 +25,7 @@ S3_BUCKET = "pdfs"  # Change to your bucket name if different
 async def get_papers(course_code: str):
     """
     Download all PDFs for a course using Selenium (login required). If already downloaded, does nothing.
+    If no PDFs exist for the course, exit early and return a message.
     """
     try:
         result = subprocess.run(
@@ -36,23 +38,31 @@ async def get_papers(course_code: str):
             capture_output=True,
             timeout=300,
         )
+        # If extractText.py returns False (no past papers), check stdout
+        stdout = result.stdout.decode()
+        if "No past papers found" in stdout:
+            return {
+                "message": f"No past papers found for {course_code}.",
+                "output": stdout,
+                "stderr": result.stderr.decode(),
+                "no_papers": True,
+            }
         if result.returncode != 0:
             raise HTTPException(
                 status_code=500,
                 detail={
                     "error": result.stderr.decode(),
-                    "output": result.stdout.decode(),
+                    "output": stdout,
                     "returncode": result.returncode,
                 },
             )
         return {
             "message": "Download complete",
-            "output": result.stdout.decode(),
+            "output": stdout,
             "stderr": result.stderr.decode(),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 
 @router.get("/ai/past-papers/{course_code}")
@@ -78,9 +88,9 @@ async def list_past_papers(course_code: str):
     return pdfs
 
 
-
 from fastapi.responses import StreamingResponse
 import io
+
 
 @router.get("/ai/past-papers/{course_code}/{filename}")
 async def get_past_paper_pdf(course_code: str, filename: str):
@@ -99,7 +109,7 @@ async def get_past_paper_pdf(course_code: str, filename: str):
         return StreamingResponse(
             s3_obj["Body"],
             media_type="application/pdf",
-            headers={"Content-Disposition": f'inline; filename="{filename}"'}
+            headers={"Content-Disposition": f'inline; filename="{filename}"'},
         )
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"File not found in S3: {e}")
