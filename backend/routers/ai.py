@@ -5,6 +5,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 import os
 import subprocess
+import sys
 import boto3
 from botocore.client import Config
 
