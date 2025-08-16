@@ -24,7 +24,7 @@ from uuid import UUID
 
 JWT_SECRET = os.environ.get("JWT_SECRET")
 JWT_ALGORITHM = "HS256"
-JWT_EXP_DELTA_SECONDS = 3600
+JWT_EXP_DELTA_SECONDS = 10800
 
 router = APIRouter()
 
