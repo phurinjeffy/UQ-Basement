@@ -24,7 +24,8 @@ from uuid import UUID
 
 JWT_SECRET = os.environ.get("JWT_SECRET")
 JWT_ALGORITHM = "HS256"
-JWT_EXP_DELTA_SECONDS = 3600
+# Increase expiry for easier testing (24 hours)
+JWT_EXP_DELTA_SECONDS = 86400
 
 router = APIRouter()
 
@@ -171,26 +172,25 @@ async def login_user(login_data: UserLogin):
             if "password_hash" in user:
                 del user["password_hash"]
 
-            # Generate JWT token
             payload = {
                 "user_id": user["id"],
                 "name": user.get("name", user.get("email")),
-                "exp": (datetime.utcnow() + timedelta(seconds=JWT_EXP_DELTA_SECONDS)).timestamp()
+                "email": user.get("email"),
+                "exp": (
+                    datetime.utcnow() + timedelta(seconds=JWT_EXP_DELTA_SECONDS)
+                ).timestamp(),
             }
+
             if not JWT_SECRET:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="JWT secret key not set in environment variables."
+                    detail="JWT secret key not set in environment variables.",
                 )
             token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
             logger.info(f"User logged in successfully: {user['email']}")
 
-            return {
-                "message": "Login successful",
-                "user": user,
-                "token": token
-            }
+            return {"message": "Login successful", "user": user, "token": token}
 
     except HTTPException:
         raise
