@@ -157,6 +157,7 @@ const MockExam = () => {
                 : "border-transparent text-gray-500 dark:text-gray-400"
             }`}
             onClick={() => setTab("pastPapers")}
+            disabled={false}
           >
             Past Papers
           </button>
@@ -165,8 +166,11 @@ const MockExam = () => {
               tab === "mockExams"
                 ? "border-indigo-500 text-indigo-700 dark:text-indigo-300"
                 : "border-transparent text-gray-500 dark:text-gray-400"
+            } ${
+              pastPapers.length === 0 ? "opacity-50 cursor-not-allowed" : ""
             }`}
-            onClick={() => setTab("mockExams")}
+            onClick={() => pastPapers.length > 0 && setTab("mockExams")}
+            disabled={pastPapers.length === 0}
           >
             Mock Exams
           </button>
