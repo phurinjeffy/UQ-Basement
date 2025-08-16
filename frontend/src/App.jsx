@@ -1,6 +1,5 @@
 import "./App.css";
 import Navbar from "./components/Navbar";
-import Sidebar from "./components/Sidebar";
 import { Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home.jsx";
@@ -47,7 +46,6 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
-        <Sidebar />
       </div>
     </AuthProvider>
   );
