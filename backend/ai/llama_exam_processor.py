@@ -160,6 +160,7 @@ if __name__ == "__main__":
     json_str = response[start:end]
     # Attempt to clean up common issues
     json_str = json_str.replace("'", '"')
+    json_str = json_str.replace('“', '"').replace('”', '"').replace('‘', '"').replace('’', '"')
     json_str = json_str.replace(",]", "]")
     json_str = json_str.replace(",\n]", "\n]")
     try:
