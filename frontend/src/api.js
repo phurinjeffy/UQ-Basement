@@ -152,3 +152,22 @@ export async function fetchQuizzes(courseId, page = 1, size = 50) {
     });
     return res.data; // consumer should handle array or paged shape
 }
+
+export async function submitAnswer(quizId, userId, answers) {
+    const payload = {
+        user_id: userId,
+        quiz_id: quizId,
+        answers: answers.map((answer) => ({
+            question: answer.question,
+            user_answer: answer.user_answer,
+        })),
+    };
+
+    const res = await axios.post(`${API_BASE}/add-answers`, payload, {
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+    });
+    return res.data;
+}

@@ -11,6 +11,7 @@ import {
   fetchCourseByCode,
   fetchQuizzes,
   generateQuestionsJson,
+  submitAnswer
 } from "../api";
 
 const getPaperMeta = (filename) => {
@@ -236,11 +237,26 @@ const MockExam = () => {
     title: enrollmentDetails?.course_title || "",
   };
 
+  // autosave key helper (per-course + exam id)
+  const autosaveKey = (examId) => `mockexam:${courseId}:${examId}:answers`;
+
   // Safe references for currently selected exam and question to avoid undefined access
   const selectedExam = selectedMockExamIndex != null ? mockExams[selectedMockExamIndex] : null;
   const selectedQuestions = Array.isArray(selectedExam?.questions) ? selectedExam.questions : [];
   const questionCount = selectedQuestions.length;
   const currentQuestionObj = selectedQuestions[currentQuestionIndex] || null;
+
+  // Autosave answers to localStorage when navigating between questions
+  useEffect(() => {
+    if (!selectedExam) return;
+    try {
+      localStorage.setItem(autosaveKey(selectedExam.id), JSON.stringify(answers));
+    } catch (e) {
+      // ignore
+    }
+    // only run when question index changes (navigation)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentQuestionIndex]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -542,6 +558,14 @@ const MockExam = () => {
                   <button
                     className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200/80 dark:bg-gray-700/80 hover:bg-red-500 hover:text-white transition-colors text-gray-700 dark:text-gray-200 shadow"
                     onClick={() => {
+                      // Persist answers on close
+                      try {
+                        if (selectedExam && selectedExam.id) {
+                          localStorage.setItem(autosaveKey(selectedExam.id), JSON.stringify(answers));
+                        }
+                      } catch (e) {
+                        // ignore
+                      }
                       setShowQuizModal(false);
                       setSelectedMockExamIndex(null);
                       setCurrentQuestionIndex(0);
@@ -618,17 +642,59 @@ const MockExam = () => {
                         const copy = [...mockExams];
                         copy[selectedMockExamIndex] = { ...copy[selectedMockExamIndex], lastSaved: new Date().toISOString() };
                         setMockExams(copy);
+                        // persist answers to localStorage
+                        try {
+                          if (selectedExam && selectedExam.id) {
+                            localStorage.setItem(autosaveKey(selectedExam.id), JSON.stringify(answers));
+                          }
+                        } catch (e) {
+                          // ignore
+                        }
                       }}
                     >
                       Save
                     </button>
                     <button
                       className="btn btn-sm btn-primary"
-                      onClick={() => {
-                        // Simple submit flow: mark exam as submitted and close modal
+                      onClick={async () => {
+                        setMockError("");
+                        const examToSubmit = selectedExam || mockExams[selectedMockExamIndex];
+                        const labels = ["A","B","C","D","E","F","G"];
+                        const answersPayload = (examToSubmit?.questions || []).map((q, qi) => {
+                          let questionText = q.text || "";
+                          if (q.type === 'mcq' && Array.isArray(q.choices) && q.choices.length > 0) {
+                            const opts = q.choices.map((c, idx) => `${labels[idx] || String.fromCharCode(65+idx)})${c}`).join(', ');
+                            questionText = `${questionText} ${opts}`.trim();
+                          }
+                          return {
+                            question: questionText,
+                            user_answer: answers[qi] || "",
+                          };
+                        });
+
+                        try {
+                          // call API helper
+                          await submitAnswer(examToSubmit?.id, userId, answersPayload);
+                        } catch (err) {
+                          const msg = err?.response?.data?.detail || err?.message || 'Failed to submit answers';
+                          setMockError(msg);
+                          return; // keep modal open so user can retry
+                        }
+
+                        // on success mark exam as submitted locally and clear autosave
                         const copy = [...mockExams];
-                        copy[selectedMockExamIndex] = { ...copy[selectedMockExamIndex], submitted: true, answers };
-                        setMockExams(copy);
+                        if (typeof selectedMockExamIndex === 'number') {
+                          copy[selectedMockExamIndex] = { ...copy[selectedMockExamIndex], submitted: true, answers };
+                          setMockExams(copy);
+                        }
+                        try {
+                          if (examToSubmit && examToSubmit.id) {
+                            localStorage.removeItem(autosaveKey(examToSubmit.id));
+                          }
+                        } catch (e) {
+                          // ignore
+                        }
+
                         setShowQuizModal(false);
                         setSelectedMockExamIndex(null);
                         setCurrentQuestionIndex(0);
@@ -784,7 +850,15 @@ const MockExam = () => {
                           setCurrentQuestionIndex(0);
                           // initialize answers array with nulls for unanswered
                           const qlen = exam.questions?.length || 0;
-                          setAnswers(Array(qlen).fill(null));
+                          // try to load saved answers from localStorage for this exam
+                          let loaded = null;
+                          try {
+                            const raw = localStorage.getItem(autosaveKey(exam.id));
+                            if (raw) loaded = JSON.parse(raw);
+                          } catch (e) {
+                            loaded = null;
+                          }
+                          setAnswers(Array(qlen).fill(null).map((v, i) => (loaded && typeof loaded[i] !== 'undefined' ? loaded[i] : null)));
                           setShowQuizModal(true);
                         }}
                       >
