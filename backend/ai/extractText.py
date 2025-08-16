@@ -27,7 +27,8 @@ def clean_filename(course_code, original_name):
     # Combine clean name
     return f"{course_code}_{semester}_{year}.txt"
 
-def download_and_extract(course_code):
+
+def download_pdfs(course_code):
     download_dir = os.path.join(os.getcwd(), "past_papers", course_code)
     os.makedirs(download_dir, exist_ok=True)
 
@@ -74,6 +75,8 @@ def download_and_extract(course_code):
 
     time.sleep(5)  # wait for downloads
 
+def extract_text_from_pdfs(course_code):
+    download_dir = os.path.join(os.getcwd(), "past_papers", course_code)
     # Extract text and save with clean names
     pdf_files = glob.glob(os.path.join(download_dir, "*.pdf"))
     for pdf_file in pdf_files:
@@ -94,7 +97,22 @@ def download_and_extract(course_code):
 
     print(f"\n[✓] All papers processed and saved in: {download_dir}")
 
+def download_and_extract(course_code):
+    download_pdfs(course_code)
+    extract_text_from_pdfs(course_code)
+
 
 if __name__ == "__main__":
-    course = input("Course code (e.g., CSSE2310): ").strip().upper()
-    download_and_extract(course)
+    if len(sys.argv) > 1:
+        course = sys.argv[1].strip().upper()
+    else:
+        course = input("Course code (e.g., CSSE2310): ").strip().upper()
+
+    # Optional second argument: mode
+    mode = sys.argv[2] if len(sys.argv) > 2 else None
+    if mode == "download":
+        download_pdfs(course)
+    elif mode == "extract":
+        extract_text_from_pdfs(course)
+    else:
+        download_and_extract(course)
