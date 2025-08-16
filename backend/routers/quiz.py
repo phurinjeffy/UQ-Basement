@@ -159,7 +159,18 @@ async def get_quizzes_by_user_and_course(user_id: str, course_id: str):
             if resp.status_code != 200:
                 raise HTTPException(status_code=resp.status_code, detail=resp.text)
             quizzes = resp.json()
-            return APIResponse(success=True, message="Quizzes fetched successfully", data={"quizzes": quizzes})
+            # Fetch questions for each quiz
+            quizzes_with_questions = []
+            for quiz in quizzes:
+                quiz_id = quiz.get("id")
+                questions_resp = await client.get(
+                    f"{SUPABASE_REST_URL}/questions?quiz_id=eq.{quiz_id}",
+                    headers=get_supabase_headers()
+                )
+                questions = questions_resp.json() if questions_resp.status_code == 200 else []
+                quiz["questions"] = questions
+                quizzes_with_questions.append(quiz)
+            return APIResponse(success=True, message="Quizzes fetched successfully", data={"quizzes": quizzes_with_questions})
     except HTTPException:
         raise
     except Exception as e:
