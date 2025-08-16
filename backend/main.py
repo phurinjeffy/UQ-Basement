@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import users, courses, ai
+from routers import users, courses, ai, enrollments
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -12,6 +12,7 @@ app = FastAPI(
 app.include_router(users.router, prefix="/api/v1", tags=["Users"])
 app.include_router(courses.router, prefix="/api/v1", tags=["Courses"])
 app.include_router(ai.router, prefix="/api/v1", tags=["AI"])
+app.include_router(enrollments.router, prefix="/api/v1", tags=["Enrollments"])
 
 # CORS middleware setup
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,7 +24,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 # Root endpoint
 @app.get("/")
