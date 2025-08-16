@@ -147,6 +147,24 @@ async def get_quizzes(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+@router.get("/by-user-course/{user_id}/{course_id}", response_model=APIResponse)
+async def get_quizzes_by_user_and_course(user_id: str, course_id: str):
+    """Get all quizzes created by a specific user for a specific course."""
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{SUPABASE_REST_URL}/quiz?user_id=eq.{user_id}&course_id=eq.{course_id}",
+                headers=get_supabase_headers()
+            )
+            if resp.status_code != 200:
+                raise HTTPException(status_code=resp.status_code, detail=resp.text)
+            quizzes = resp.json()
+            return APIResponse(success=True, message="Quizzes fetched successfully", data={"quizzes": quizzes})
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
 @router.get("/by-user/{user_id}", response_model=APIResponse)
 async def get_quizzes_by_user(user_id: str):
     """Get all quizzes created by a specific user."""
