@@ -170,8 +170,9 @@ if __name__ == "__main__":
         print("Analysis + mock exam saved to:", output_file)
     except Exception as e:
         print("Failed to parse JSON:", e)
-        # Save raw response for manual inspection
-        raw_file = f"{COURSE_CODE}_mock_raw_response.txt"
+        # Remove code block markers if present
+        cleaned_response = response.replace('```json', '').replace('```', '').strip()
+        raw_file = f"{COURSE_CODE}_mock_raw_response.json"
         with open(raw_file, "w", encoding="utf-8") as f:
-            f.write(response)
+            f.write(cleaned_response)
         print(f"Raw AI response saved to: {raw_file}")
