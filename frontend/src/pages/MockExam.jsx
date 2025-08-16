@@ -89,7 +89,7 @@ const MockExam = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [tab, setTab] = useState("pastPapers");
-  const [mockExams, setMockExams] = useState([]); // Placeholder for generated exams
+  const [mockExams, setMockExams] = useState(null); // null = loading, [] = empty, [...] = data
   const [generating, setGenerating] = useState(false);
   const [mockError, setMockError] = useState("");
   const [enrollmentDetails, setEnrollmentDetails] = useState(null);
@@ -176,25 +176,47 @@ const MockExam = () => {
 
   // Load quizzes (mock exams) for this course using the course UUID
   useEffect(() => {
-    if (!courseId) return;
+    if (!courseId || tab !== "mockExams") return;
     let cancelled = false;
+    
     const loadQuizzes = async () => {
+      // Reset to null on new fetch to show skeleton
+      setMockExams(null);
+      const minDelay = new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
+
       try {
         const courseDetails = await fetchCourseByCode(courseId);
         const courseUUID = courseDetails?.id;
-        if (cancelled || !courseUUID) return;
+        
+        if (cancelled || !courseUUID) {
+          await minDelay;
+          if (!cancelled) setMockExams([]); // Nothing to fetch, show empty
+          return;
+        }
 
-        const data = await fetchQuizzes(courseUUID, 1, 50);
-        const items = Array.isArray(data) ? data : data?.results || data?.quizzes || data?.items || [];
-        if (cancelled || !items || items.length === 0) return;
+        const [data] = await Promise.all([
+          fetchQuizzes(courseUUID, 1, 50),
+          minDelay
+        ]);
+
+        if (cancelled) return;
+
+        let items = null;
+        if (Array.isArray(data)) items = data;
+        else if (data && Array.isArray(data.results)) items = data.results;
+        else if (data && Array.isArray(data.quizzes)) items = data.quizzes;
+        else if (data && Array.isArray(data.items)) items = data.items;
+        
+        if (items === null || items.length === 0) {
+          if (!cancelled) setMockExams([]);
+          return;
+        }
 
         const mapped = items.map((q) => {
           const questions = Array.isArray(q.questions) ? q.questions : [];
           const mappedQuestions = (questions || []).map((qq) => {
             const rawType = (qq.question_type || "").toString().toLowerCase();
             const hasChoices = Array.isArray(qq.choices) && qq.choices.length > 0;
-            // Only treat explicit 'multiple_choice' or presence of choices as MCQ;
-            // everything else (including 'text' or unknown types) is treated as text.
             const normalizedType = rawType === "multiple_choice" || hasChoices ? "mcq" : "text";
             return {
               id: qq.id,
@@ -212,16 +234,13 @@ const MockExam = () => {
           };
         });
 
-        setMockExams((prev) => {
-          const prevArr = Array.isArray(prev) ? prev : [];
-          const existing = new Set(prevArr.map((e) => e.id));
-          const toAppend = mapped.filter((m) => m && m.id && !existing.has(m.id));
-          if (toAppend.length === 0) return prevArr;
-          return [...prevArr, ...toAppend];
-        });
+        if (!cancelled) {
+          setMockExams(mapped);
+        }
       } catch (err) {
-        // non-fatal
-        // console.warn('Failed to load quizzes', err);
+        console.warn('Failed to load quizzes', err);
+        await minDelay; // Ensure delay is respected even on error
+        if (!cancelled) setMockExams([]); // On error, show empty state
       }
     };
 
@@ -229,7 +248,7 @@ const MockExam = () => {
     return () => {
       cancelled = true;
     };
-  }, [courseId]);
+  }, [courseId, tab]);
 
   // Dummy course info (replace with real API if available)
   const courseInfo = {
@@ -715,7 +734,7 @@ const MockExam = () => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Mock Exams</h2>
                 <button
-                className="btn btn-secondary"
+                  className="btn btn-secondary"
                 onClick={async () => {
                   setGenerating(true);
                   setMockError("");
@@ -813,7 +832,23 @@ const MockExam = () => {
               </button>
             </div>
             {mockError && <div className="text-red-500 mb-2">{mockError}</div>}
-            {!mockExams || mockExams.length === 0 ? (
+            {mockExams === null ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[...Array(4)].map((_, index) => (
+                  <div
+                    key={index}
+                    className="bg-white dark:bg-gray-700 rounded-lg shadow p-4 flex flex-col gap-2 border border-gray-100 dark:border-gray-600"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="skeleton w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                      <div className="skeleton w-32 h-6 bg-gray-300 dark:bg-gray-600"></div>
+                    </div>
+                    <div className="skeleton w-full h-4 bg-gray-200 dark:bg-gray-500 mb-2"></div>
+                    <div className="skeleton w-24 h-8 bg-gray-300 dark:bg-gray-600 mt-auto"></div>
+                  </div>
+                ))}
+              </div>
+            ) : mockExams.length === 0 ? (
               <div className="text-gray-500">No mock exams generated yet.</div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
