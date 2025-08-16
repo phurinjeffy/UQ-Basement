@@ -92,3 +92,37 @@ export async function fetchEnrollmentDetails(userId, courseName) {
     console.log(res.data);
     return res.data;
 }
+
+// Create a quiz (mock exam)
+export async function createQuiz({ course_id, title, description, topic, time_limit }) {
+  try {
+    const res = await axios.post(
+      `${API_BASE}/quiz/`, // trailing slash
+      {
+        title,
+        description,
+        course_id,
+        topic,
+        time_limit,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+    return res.data;
+  } catch (err) {
+    console.error("Quiz creation error:", err.response?.data || err);
+    throw err;
+  }
+}
+
+// Fetch course details by code (e.g., DECO2500)
+export async function fetchCourseByCode(courseCode) {
+  const res = await axios.get(`${API_BASE}/courses/search-by-code`, {
+    params: { code: courseCode }
+  });
+  return res.data;
+}
