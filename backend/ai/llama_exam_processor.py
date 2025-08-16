@@ -2,11 +2,14 @@ import os
 import json
 import requests
 from PyPDF2 import PdfReader
+from dotenv import load_dotenv
+load_dotenv()  # this loads your .env file into os.environ
+
 
 # --------------------------
 # CONFIGURATION
 # --------------------------
-COURSE_FOLDER = "past_papers/csse2310"
+COURSE_FOLDER = "past_papers/DECO2500"
 NUM_MOCK_QUESTIONS = 10
 OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
@@ -31,6 +34,21 @@ def read_past_paper_files(folder):
                 text += page.extract_text() + "\n"
             papers.append(text)
     return papers
+
+def preprocess_exam_text(text):
+    lines = text.splitlines()
+    questions = []
+    current_question = []
+    for line in lines:
+        if line.strip().startswith("Question") or line.strip().startswith("PART"):
+            continue
+        if line.strip() and not line.strip().startswith("Semester") and not line.strip().startswith("Examination"):
+            current_question.append(line)
+        if line.strip().endswith("?") or line.strip().endswith("."):
+            if current_question:
+                questions.append("\n".join(current_question))
+                current_question = []
+    return questions
 
 def split_into_questions(text):
     questions = []
@@ -74,42 +92,39 @@ if __name__ == "__main__":
         raise FileNotFoundError(f"No PDF files found in {COURSE_FOLDER}")
     
     first_paper = papers[0]
-    questions = split_into_questions(first_paper)
+    questions = preprocess_exam_text(first_paper)
     
     # Build prompt for analysis + mock generation
     prompt = (
-        "You are an academic assistant. Your job has two parts:\n"
-        "IGNORE any pages that do not contain actual exam questions "
-        "(for example, title page, instructions, or venue info). Only include real questions in the 'questions' output."
-        "1. For each original question, create an entry with:\n"
-        "   - 'question_text': include ALL content exactly as in the original question, "
-        "including instructions, paragraphs, and code.\n"
-        "   - 'topic': main subject area of the question.\n"
-        "   - 'question_type': 'multiple_choice', 'short_answer', 'essay', or 'calculation'.\n"
-        "   - DO NOT include 'options' or 'correct_answer' for original questions.\n"
-        "   - If the question is unrelated to the main subject, IGNORE it completely.\n"
-        "2. Generate a mock exam of about "
-        f"{NUM_MOCK_QUESTIONS} questions:\n"
-        "   - Keep the same question type as the originals.\n"
-        "   - Include code, paragraphs, or instructions as appropriate.\n"
-        "   - For multiple choice, generate 4 options labeled A–D, with one correct answer.\n"
-        "   - Maintain similar style and difficulty.\n"
-        "IMPORTANT: Output STRICTLY valid JSON, nothing outside the JSON object.\n"
-        "JSON structure:\n"
-        "{\n"
-        '  "questions": [\n'
-        '    {"question_text": "...", "topic": "...", "question_type": "..."},\n'
-        "    ...\n"
-        "  ],\n"
-        '  "mock_exam": [\n'
-        '    {"question_text": "...", "topic": "...", "question_type": "...", '
-        '"options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "B"},\n'
-        "    ...\n"
-        "  ]\n"
-        "}\n\n"
-        "Here are the original questions:\n"
-    )
-
+    "You are an academic assistant. Your job has two parts:\n"
+    "1. For each original question, create an entry with:\n"
+    "   - 'question_text': the actual question being asked, excluding any options.\n"
+    "   - 'topic': main subject area of the question.\n"
+    "   - 'question_type': 'multiple_choice', 'short_answer', 'essay', or 'calculation'.\n"
+    "   - For multiple choice questions, include an 'options' field with the possible answers, formatted as 'A) option1', 'B) option2', etc.\n"
+    "2. Generate a mock exam with the same number of questions, topics, and question types as the original exam.\n"
+    "   - For multiple choice questions, format options as 'A) option1', 'B) option2', etc.\n"
+    "   - Include 'correct_answer' for multiple choice questions and 'sample_answer' for short answer questions.\n"
+    "   - Maintain similar style and difficulty.\n"
+    "   - Include the same number of questions as the original exam.\n"
+    "IMPORTANT: Output STRICTLY valid JSON, nothing outside the JSON object.\n"
+    "JSON structure:\n"
+    "{\n"
+    '  "questions": [\n'
+    '    {"question_text": "What is the main difference between...", "topic": "...", "question_type": "multiple_choice", '
+    '"options": ["A) ...", "B) ...", "C) ...", "D) ..."]},\n'
+    "    ...\n"
+    "  ],\n"
+    '  "mock_exam": [\n'
+    '    {"question_text": "What is the main difference between...", "topic": "...", "question_type": "multiple_choice", '
+    '"options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "..."},\n'
+    '    {"question_text": "...", "topic": "...", "question_type": "short_answer", '
+    '"sample_answer": "..."},\n'
+    "    ...\n"
+    "  ]\n"
+    "}\n\n"
+    "Here are the original questions:\n"
+)
     for idx, q in enumerate(questions, 1):
         prompt += f"\n--- QUESTION {idx} START ---\n{q}\n--- QUESTION {idx} END ---\n"
 
