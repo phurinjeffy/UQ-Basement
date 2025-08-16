@@ -18,6 +18,9 @@ export function AuthProvider({ children }) {
       const res = await loginUser(email, password);
       setUser(res.user);
       localStorage.setItem("user", JSON.stringify(res.user));
+      if (res.token) {
+        localStorage.setItem("token", res.token);
+      }
       return true;
     } catch (err) {
       setError(err?.response?.data?.detail || "Login failed");
@@ -34,6 +37,9 @@ export function AuthProvider({ children }) {
       const res = await signupUser({ email, password });
       setUser(res.user);
       localStorage.setItem("user", JSON.stringify(res.user));
+      if (res.token) {
+        localStorage.setItem("token", res.token);
+      }
       return true;
     } catch (err) {
       setError(err?.response?.data?.detail || "Signup failed");
@@ -46,6 +52,7 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
+    localStorage.removeItem("token");
   };
 
   return (
