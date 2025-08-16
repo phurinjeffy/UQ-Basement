@@ -40,11 +40,20 @@ const MockExam = () => {
     }
   }, [showModal]);
 
+  const [noPapers, setNoPapers] = useState(false);
   const fetchPapers = async () => {
     setDownloading(true);
     setError("");
+    setNoPapers(false);
     try {
-      await getPapers(courseId);
+      const res = await getPapers(courseId);
+      if (res?.no_papers) {
+        setNoPapers(true);
+        setPastPapers([]);
+        setError(`No past papers found for this course.`);
+        setDownloading(false);
+        return;
+      }
       const papers = await listPastPapers(courseId);
       setPastPapers(papers);
     } catch (e) {
@@ -54,9 +63,14 @@ const MockExam = () => {
   };
 
   useEffect(() => {
+    setNoPapers(false); // Only reset on course change
     listPastPapers(courseId)
-      .then(setPastPapers)
-      .catch(() => setPastPapers([]));
+      .then((papers) => {
+        setPastPapers(papers);
+      })
+      .catch(() => {
+        setPastPapers([]);
+      });
   }, [courseId]);
 
   // Dummy course info (replace with real API if available)
@@ -166,7 +180,7 @@ const MockExam = () => {
               <button
                 className="btn btn-secondary"
                 onClick={fetchPapers}
-                disabled={downloading}
+                disabled={downloading || noPapers}
               >
                 {downloading ? (
                   <span className="flex items-center gap-2">
@@ -188,16 +202,24 @@ const MockExam = () => {
                         fill="currentColor"
                         d="M4 12a8 8 0 018-8v8z"
                       />
-                    </svg>{" "}
+                    </svg>
                     Downloading...
                   </span>
+                ) : noPapers ? (
+                  <span>No Past Papers</span>
                 ) : (
-                  "Get Past Papers"
+                  <span>Get Past Papers</span>
                 )}
               </button>
             </div>
-            {error && <div className="text-red-500 mb-2">{error}</div>}
-            {pastPapers.length === 0 ? (
+            {error && !noPapers && (
+              <div className="text-red-500 mb-2">{error}</div>
+            )}
+            {noPapers ? (
+              <div className="text-gray-500">
+                No past papers found for this course.
+              </div>
+            ) : pastPapers.length === 0 ? (
               <div className="text-gray-500">
                 No past papers found for this course.
               </div>
@@ -290,7 +312,7 @@ const MockExam = () => {
                         fill="currentColor"
                         d="M4 12a8 8 0 018-8v8z"
                       />
-                    </svg>{" "}
+                    </svg>
                     Generating...
                   </span>
                 ) : (
