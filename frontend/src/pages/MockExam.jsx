@@ -73,6 +73,10 @@ const MockExam = () => {
   const [pastPapers, setPastPapers] = useState([]);
   const [pdfView, setPdfView] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showQuizModal, setShowQuizModal] = useState(false);
+  const [selectedMockExamIndex, setSelectedMockExamIndex] = useState(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState([]);
   const [tab, setTab] = useState("pastPapers");
   const [mockExams, setMockExams] = useState([]); // Placeholder for generated exams
   const [generating, setGenerating] = useState(false);
@@ -94,16 +98,16 @@ const MockExam = () => {
         console.error("Failed to extract user ID from token:", error);
       }
 
-  // Prevent background scroll when modal is open
+  // Prevent background scroll when any modal is open
   useEffect(() => {
-    if (showModal) {
+    if (showModal || showQuizModal) {
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
       return () => {
         document.body.style.overflow = originalOverflow;
       };
     }
-  }, [showModal]);
+  }, [showModal, showQuizModal]);
 
   const [noPapers, setNoPapers] = useState(false);
   // Use a ref to track if a download is in progress, so tab switches don't reset the state
@@ -235,7 +239,7 @@ const MockExam = () => {
           {!enrollmentDetails ? (
             <div className="grid grid-flow-col gap-5 text-center auto-cols-max">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="flex flex-col w-16 h-24 p-2 bg-neutral rounded-box text-neutral-content">
+                <div key={i} className="flex flex-col w-16 h-22 p-2 bg-neutral rounded-box text-neutral-content">
                   <div className="skeleton h-12 w-12 bg-gray-500"></div>
                   <div className="skeleton h-4 w-8 bg-gray-500 mt-3"></div>
                 </div>
@@ -412,26 +416,157 @@ const MockExam = () => {
             )}
           </div>
         )}
+        {/* Quiz Modal - Single question view with pagination */}
+        {showQuizModal && selectedMockExamIndex != null && mockExams[selectedMockExamIndex] && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
+            <div className="relative z-10 w-full max-w-2xl mx-auto rounded-2xl shadow-2xl bg-white dark:bg-gray-900 flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between px-6 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <svg className="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  <div>
+                    <div className="font-semibold text-gray-800 dark:text-gray-100 truncate">{mockExams[selectedMockExamIndex].name}</div>
+                    <div className="text-xs text-gray-500">{mockExams[selectedMockExamIndex].date}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-sm text-gray-600 dark:text-gray-300">Question {currentQuestionIndex + 1} / {mockExams[selectedMockExamIndex].questions.length}</div>
+                  <button
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200/80 dark:bg-gray-700/80 hover:bg-red-500 hover:text-white transition-colors text-gray-700 dark:text-gray-200 shadow"
+                    onClick={() => {
+                      setShowQuizModal(false);
+                      setSelectedMockExamIndex(null);
+                      setCurrentQuestionIndex(0);
+                      setAnswers([]);
+                    }}
+                    aria-label="Close Quiz"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 flex-1 flex flex-col gap-4">
+                <div className="text-gray-800 dark:text-gray-100 text-lg">
+                  {mockExams[selectedMockExamIndex].questions[currentQuestionIndex].text}
+                </div>
+                {/* Render by question type */}
+                {mockExams[selectedMockExamIndex].questions[currentQuestionIndex].type === 'mcq' ? (
+                  <div className="flex flex-col gap-2">
+                    {mockExams[selectedMockExamIndex].questions[currentQuestionIndex].choices.map((choice, ci) => (
+                      <label key={ci} className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${answers[currentQuestionIndex] === choice ? 'bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800' : 'border border-transparent'}`}>
+                        <input
+                          type="radio"
+                          name={`q-${selectedMockExamIndex}-${currentQuestionIndex}`}
+                          checked={answers[currentQuestionIndex] === choice}
+                          onChange={() => {
+                            const copy = [...answers];
+                            copy[currentQuestionIndex] = choice;
+                            setAnswers(copy);
+                          }}
+                          className="radio radio-sm"
+                        />
+                        <span className="text-sm text-gray-800 dark:text-gray-100">{choice}</span>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <textarea
+                    value={answers[currentQuestionIndex] || ''}
+                    onChange={(e) => {
+                      const copy = [...answers];
+                      copy[currentQuestionIndex] = e.target.value;
+                      setAnswers(copy);
+                    }}
+                    placeholder="Type your answer here..."
+                    className="w-full h-40 p-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none focus:outline-none"
+                  />
+                )}
+
+                <div className="flex items-center justify-between mt-auto">
+                  <div className="flex gap-2">
+                    <button
+                      className={`btn btn-sm ${currentQuestionIndex === 0 ? 'btn-disabled' : 'btn-outline'}`}
+                      onClick={() => setCurrentQuestionIndex((i) => Math.max(0, i - 1))}
+                      disabled={currentQuestionIndex === 0}
+                    >
+                      Previous
+                    </button>
+                    <button
+                      className={`btn btn-sm ${currentQuestionIndex === mockExams[selectedMockExamIndex].questions.length - 1 ? 'btn-disabled' : 'btn-outline'}`}
+                      onClick={() => setCurrentQuestionIndex((i) => Math.min(mockExams[selectedMockExamIndex].questions.length - 1, i + 1))}
+                      disabled={currentQuestionIndex === mockExams[selectedMockExamIndex].questions.length - 1}
+                    >
+                      Next
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="btn btn-sm btn-ghost"
+                      onClick={() => {
+                        // Save answer locally and keep modal open
+                        const copy = [...mockExams];
+                        copy[selectedMockExamIndex] = { ...copy[selectedMockExamIndex], lastSaved: new Date().toISOString() };
+                        setMockExams(copy);
+                      }}
+                    >
+                      Save
+                    </button>
+                    <button
+                      className="btn btn-sm btn-primary"
+                      onClick={() => {
+                        // Simple submit flow: mark exam as submitted and close modal
+                        const copy = [...mockExams];
+                        copy[selectedMockExamIndex] = { ...copy[selectedMockExamIndex], submitted: true, answers };
+                        setMockExams(copy);
+                        setShowQuizModal(false);
+                        setSelectedMockExamIndex(null);
+                        setCurrentQuestionIndex(0);
+                        setAnswers([]);
+                      }}
+                    >
+                      Submit Exam
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {tab === "mockExams" && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Mock Exams</h2>
-              <button
+                <button
                 className="btn btn-secondary"
                 onClick={() => {
                   setGenerating(true);
                   setMockError("");
                   setTimeout(() => {
+                    // Create a small sample of questions for the mock exam (mix of text and MCQ)
+                    const sampleQuestions = [
+                      { id: 1, type: 'text', text: 'Explain the main purpose of the module covered in Week 1.' },
+                      { id: 2, type: 'mcq', text: 'Which data structure gives O(1) average lookups?', choices: ['Array', 'Hash Table', 'Linked List', 'Binary Tree'] },
+                      { id: 3, type: 'text', text: 'Write a short algorithm to perform Y and explain its complexity.' },
+                      { id: 4, type: 'mcq', text: 'Which sorting algorithm is stable?', choices: ['QuickSort', 'MergeSort', 'HeapSort', 'SelectionSort'] },
+                      { id: 5, type: 'text', text: 'Summarise the key limitations of approach A.' },
+                    ];
                     setMockExams([
                       ...(mockExams || []),
                       {
                         name: `Mock Exam ${mockExams.length + 1}`,
                         date: new Date().toLocaleString(),
+                        questions: sampleQuestions,
+                        submitted: false,
                       },
                     ]);
                     setGenerating(false);
-                  }, 1500);
+                  }, 800);
                 }}
                 disabled={generating}
               >
@@ -492,9 +627,33 @@ const MockExam = () => {
                     <div className="truncate text-gray-700 dark:text-gray-200 text-sm mb-2">
                       Generated: {exam.date}
                     </div>
-                    <button className="btn btn-sm btn-outline mt-auto" disabled>
-                      View (Coming Soon)
-                    </button>
+                    <div className="mt-auto flex gap-2">
+                      <button
+                        className="btn btn-sm btn-outline"
+                        onClick={() => {
+                          // Open quiz modal for this exam
+                          setSelectedMockExamIndex(idx);
+                          setCurrentQuestionIndex(0);
+                          // initialize answers array with nulls for unanswered
+                          const qlen = exam.questions?.length || 0;
+                          setAnswers(Array(qlen).fill(null));
+                          setShowQuizModal(true);
+                        }}
+                      >
+                        View
+                      </button>
+                      <button
+                        className={`btn btn-sm ${exam.submitted ? 'btn-success' : 'btn-ghost'}`}
+                        onClick={() => {
+                          // quick toggle mark as complete locally
+                          const copy = [...mockExams];
+                          copy[idx] = { ...copy[idx], submitted: !copy[idx].submitted };
+                          setMockExams(copy);
+                        }}
+                      >
+                        {exam.submitted ? 'Submitted' : 'Mark'}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
