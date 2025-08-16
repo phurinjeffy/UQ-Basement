@@ -27,7 +27,7 @@ def get_supabase_headers():
         "Prefer": "return=representation"
     }
 
-router = APIRouter(prefix="/questions", tags=["questions"])
+router = APIRouter()
 
 # Helper function to parse multiple choice options
 def parse_choices(options: List[str], correct_answer: str = None) -> List[ChoiceCreate]:
