@@ -140,6 +140,8 @@ if __name__ == "__main__":
         "- Use double quotes for all keys and string values.\n"
         "- Do NOT include trailing commas.\n"
         "- Do NOT include any explanations or text outside the JSON object.\n"
+        "- Do NOT use backslashes (\\) except as part of a valid escape sequence inside a string.\n"
+        "- Do NOT use any punctuation outside of double-quoted strings.\n"
         "- If you cannot answer, output an empty JSON object: {}.\n"
         "\n"
         "JSON structure:\n"
