@@ -1,10 +1,10 @@
 
 import { useState } from "react";
 
-function AddCourses({ onConfirm }) {
+function AddCourses({ onConfirm, initialCourses = [] }) {
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState([]);
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] = useState(initialCourses);
   const [loading, setLoading] = useState(false);
 
   // Fetch suggestions from API only after 4+ characters
@@ -79,10 +79,10 @@ function AddCourses({ onConfirm }) {
           <h3 className="font-semibold mb-1">Selected Courses:</h3>
           <ul className="flex flex-wrap gap-2">
             {courses.map((course, idx) => (
-              <li key={idx} className="badge badge-outline flex items-center gap-1">
-                <span className="font-bold">{course.name}</span>
-                <span className="ml-1 text-xs">{course.course_title}</span>
-                <button type="button" className="ml-1 text-error" onClick={() => removeCourse(course)}>
+              <li key={idx} className="badge badge-outline flex items-center gap-2 whitespace-normal break-words h-fit">
+                <span className="font-bold break-words whitespace-normal">{course.name}</span>
+                <span className="text-xs break-words whitespace-normal">{course.course_title}</span>
+                <button type="button" className="ml-2 text-error" onClick={() => removeCourse(course)}>
                   ✕
                 </button>
               </li>

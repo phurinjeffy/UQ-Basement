@@ -198,7 +198,7 @@ async def get_user(user_id: UUID):
             # Get user's course enrollments from course table
             try:
                 courses_response = await client.get(
-                    f"{SUPABASE_REST_URL}/course",
+                    f"{SUPABASE_REST_URL}/courses",
                     headers=get_supabase_headers(),
                     params={"user_id": f"eq.{user_id}"}
                 )
@@ -420,7 +420,7 @@ async def enroll_user_in_course(user_id: UUID, course: CourseEnrollment):
             
             # Check if already enrolled
             existing_enrollment = await client.get(
-                f"{SUPABASE_REST_URL}/course",
+                f"{SUPABASE_REST_URL}/courses",
                 headers=get_supabase_headers(),
                 params={
                     "user_id": f"eq.{user_id}",
@@ -444,7 +444,7 @@ async def enroll_user_in_course(user_id: UUID, course: CourseEnrollment):
             }
             
             create_response = await client.post(
-                f"{SUPABASE_REST_URL}/course",
+                f"{SUPABASE_REST_URL}/courses",
                 headers=get_supabase_headers(),
                 json=enrollment_data
             )
@@ -502,7 +502,7 @@ async def get_user_courses(user_id: UUID):
             
             # Get user's courses
             courses_response = await client.get(
-                f"{SUPABASE_REST_URL}/course",
+                f"{SUPABASE_REST_URL}/courses",
                 headers=get_supabase_headers(),
                 params={"user_id": f"eq.{user_id}"}
             )
@@ -537,7 +537,7 @@ async def unenroll_user_from_course(user_id: UUID, course_code: str):
         async with httpx.AsyncClient() as client:
             # Check if enrollment exists
             check_response = await client.get(
-                f"{SUPABASE_REST_URL}/course",
+                f"{SUPABASE_REST_URL}/courses",
                 headers=get_supabase_headers(),
                 params={
                     "user_id": f"eq.{user_id}",
@@ -553,7 +553,7 @@ async def unenroll_user_from_course(user_id: UUID, course_code: str):
             
             # Delete enrollment
             delete_response = await client.delete(
-                f"{SUPABASE_REST_URL}/course",
+                f"{SUPABASE_REST_URL}/courses",
                 headers=get_supabase_headers(),
                 params={
                     "user_id": f"eq.{user_id}",

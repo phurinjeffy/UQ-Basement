@@ -1,12 +1,28 @@
 import { useNavigate } from "react-router-dom";
 
+import React, { useState } from "react";
+import AddCourses from "../components/AddCourses.jsx";
+
 const Dashboard = () => {
-  const courses = [
+  const [showAddCourses, setShowAddCourses] = useState(false);
+  const [courses, setCourses] = useState([
     { id: 1, name: "DECO2500", title: "Human-Computer Interactions" },
     { id: 2, name: "COMP3702", title: "Artificial Intelligence" },
     { id: 3, name: "CSSE2310", title: "System Programming" },
     { id: 4, name: "CSSE3200", title: "Software Process" },
-  ];
+  ]);
+
+  // Handler for confirming courses from AddCourses
+  const handleConfirmCourses = (newCourses) => {
+    setCourses(
+      newCourses.map((c, idx) => ({
+        id: idx + 1,
+        name: c.name,
+        title: c.course_title || c.title || ""
+      }))
+    );
+    setShowAddCourses(false);
+  };
 
   // Use email prefix as username
   let username = "Student";
@@ -129,7 +145,26 @@ const Dashboard = () => {
               <div className="flex flex-wrap gap-3">
                 <button className="btn btn-primary">Start Mock Exam</button>
                 <button className="btn btn-outline">Review Past Papers</button>
-                <button className="btn btn-outline">Add New Course</button>
+                <button className="btn btn-outline" onClick={() => setShowAddCourses(true)}>Add New Course</button>
+                {showAddCourses && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+                    <div className="relative bg-base-100 rounded-xl shadow-lg w-full max-w-md mx-auto p-0">
+                      <button
+                        className="absolute top-2 right-2 btn btn-sm btn-circle btn-ghost"
+                        onClick={() => setShowAddCourses(false)}
+                        aria-label="Close"
+                      >
+                        ✕
+                      </button>
+                      <div className="p-4">
+                        <AddCourses
+                          onConfirm={handleConfirmCourses}
+                          initialCourses={courses.map(c => ({ name: c.name, course_title: c.title }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
