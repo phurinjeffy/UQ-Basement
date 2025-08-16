@@ -31,6 +31,12 @@ function useCountdown(exam_date, exam_time) {
         exam_time ? `${exam_date}T${exam_time}` : `${exam_date}T00:00:00`
       );
       const now = new Date();
+
+      if (!exam_time) {
+        now.setHours(0, 0, 0, 0);
+        examDateTime.setHours(0, 0, 0, 0);
+      }
+
       const diff = examDateTime.getTime() - now.getTime();
 
       if (diff <= 0) return null;

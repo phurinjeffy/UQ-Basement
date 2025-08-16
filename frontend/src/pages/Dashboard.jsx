@@ -247,7 +247,7 @@ const Dashboard = () => {
                           // Remove time portion for accurate day diff
                           now.setHours(0, 0, 0, 0);
                           exam.setHours(0, 0, 0, 0);
-                          const diff = Math.ceil(
+                          const diff = Math.floor(
                             (exam - now) / (1000 * 60 * 60 * 24)
                           );
                           if (diff < 0) {
