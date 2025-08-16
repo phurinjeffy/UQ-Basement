@@ -56,3 +56,32 @@ export async function fetchCourses(hint = "") {
     const res = await axios.get(`${API_BASE}/courses`, { params });
     return res.data.courses || [];
   }
+
+// Fetch course details by course_id
+export async function fetchCourseById(courseId) {
+  const res = await axios.get(`${API_BASE}/courses/${courseId}`);
+  return res.data;
+}
+
+export async function updateEnrollments(userId, courses) {
+    console.log("here", courses);
+  const payload = courses.map(course => ({
+    user_id: userId,
+    course_id: course.id,
+    semester: "Semester 2",
+    year: 2025,
+    grade: "",
+    exam_date: course.examDate,
+    exam_time: course.examTime,
+  }));
+  const res = await axios.put(`${API_BASE}/enrollments/update?user_id=${userId}`, payload);
+  return res.data;
+}
+
+export async function getEnrollments(userId) {
+    const res = await axios.get(`${API_BASE}/enrollments`, {
+        params: { user_id: userId }
+    });
+    return res.data.enrollments || [];
+}
+

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Query
+from fastapi import APIRouter, HTTPException, status, Query, Body
 import httpx
 from typing import Optional
 from models import (
@@ -65,7 +65,9 @@ async def create_enrollment(enrollment: EnrollmentCreate):
                 "course_id": str(enrollment.course_id),
                 "semester": enrollment.semester,
                 "year": enrollment.year,
-                "grade": enrollment.grade
+                "grade": enrollment.grade,
+                "exam_date": enrollment.exam_date,
+                "exam_time": enrollment.exam_time
             }
             
             create_response = await client.post(
@@ -241,4 +243,59 @@ async def delete_enrollment(enrollment_id: UUID):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete enrollment: {str(e)}"
+        )
+    
+@router.put("/enrollments/update", status_code=status.HTTP_200_OK)
+async def update_enrollments(
+    user_id: UUID = Query(..., description="User ID to update enrollments for"),
+    enrollments: list[EnrollmentCreate] = Body(...)
+):
+    """
+    Replace all enrollments for a user with the provided list.
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            # Delete all existing enrollments for the user
+            del_response = await client.delete(
+                f"{SUPABASE_REST_URL}/enrollments",
+                headers=get_supabase_headers(),
+                params={"user_id": f"eq.{user_id}"}
+            )
+            if del_response.status_code not in [200, 204]:
+                raise HTTPException(
+                    status_code=del_response.status_code,
+                    detail=f"Failed to delete existing enrollments: {del_response.text}"
+                )
+
+            # Add new enrollments
+            created = []
+            for enrollment in enrollments:
+                enrollment_data = {
+                    "user_id": str(user_id),
+                    "course_id": str(enrollment.course_id),
+                    "semester": enrollment.semester,
+                    "year": enrollment.year,
+                    "grade": enrollment.grade,
+                    "exam_date": enrollment.exam_date,
+                    "exam_time": enrollment.exam_time
+                }
+                create_response = await client.post(
+                    f"{SUPABASE_REST_URL}/enrollments",
+                    headers=get_supabase_headers(),
+                    json=enrollment_data
+                )
+                if create_response.status_code not in [200, 201]:
+                    raise HTTPException(
+                        status_code=create_response.status_code,
+                        detail=f"Failed to create enrollment: {create_response.text}"
+                    )
+                created.append(create_response.json())
+            return {"message": "Enrollments updated", "created": created}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating enrollments: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update enrollments: {str(e)}"
         )
