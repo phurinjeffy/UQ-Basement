@@ -41,8 +41,11 @@ const MockExam = () => {
   }, [showModal]);
 
   const [noPapers, setNoPapers] = useState(false);
+  // Use a ref to track if a download is in progress, so tab switches don't reset the state
+  const downloadingRef = useRef(false);
   const fetchPapers = async () => {
     setDownloading(true);
+    downloadingRef.current = true;
     setError("");
     setNoPapers(false);
     try {
@@ -52,6 +55,7 @@ const MockExam = () => {
         setPastPapers([]);
         setError(`No past papers found for this course.`);
         setDownloading(false);
+        downloadingRef.current = false;
         return;
       }
       const papers = await listPastPapers(courseId);
@@ -60,10 +64,12 @@ const MockExam = () => {
       setError("Failed to download past papers. Try again later.");
     }
     setDownloading(false);
+    downloadingRef.current = false;
   };
 
   useEffect(() => {
     setNoPapers(false); // Only reset on course change
+    setDownloading(downloadingRef.current); // Restore downloading state on mount/tab switch
     listPastPapers(courseId)
       .then((papers) => {
         setPastPapers(papers);
