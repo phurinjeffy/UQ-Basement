@@ -21,7 +21,7 @@ S3_BUCKET = "pdfs"
 COURSE_CODE = "DECO2500"
 OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
-MODEL_NAME = "meta-llama/llama-3.2-3b-instruct:free"
+MODEL_NAME = "qwen/qwen3-coder:free"
 
 if not OPENROUTER_KEY:
     raise ValueError("OPENROUTER_KEY environment variable not set.")
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     first_paper = papers[0]
     questions = preprocess_exam_text(first_paper)
 
-    # Build prompt for only questions (no mock_exam)
+    # Build prompt for only questions
     prompt = (
         "You are an academic assistant. For each original question, create an entry with:\n"
         '   - "question_text": the actual question being asked, excluding any options.\n'

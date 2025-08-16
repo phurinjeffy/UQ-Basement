@@ -195,7 +195,6 @@ class BulkQuestionData(BaseModel):
 class BulkImportRequest(BaseModel):
     """Model for bulk importing questions from JSON"""
     questions: List[Dict[str, Any]] = Field([], description="List of question objects")
-    mock_exam: List[Dict[str, Any]] = Field([], description="List of mock exam question objects")
     quiz_id: Optional[UUID] = Field(None, description="Optional quiz ID to assign to all imported questions")  # ADD THIS LINE
 
 class BulkImportResponse(BaseModel):
