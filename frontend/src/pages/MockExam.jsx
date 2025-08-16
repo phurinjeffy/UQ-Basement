@@ -224,13 +224,15 @@ const MockExam = () => {
           const questions = Array.isArray(q.questions) ? q.questions : [];
           const mappedQuestions = (questions || []).map((qq) => {
             const rawType = (qq.question_type || "").toString().toLowerCase();
-            const hasChoices = Array.isArray(qq.choices) && qq.choices.length > 0;
+            // Check for both choices and options fields
+            const choices = qq.options || qq.choices || [];
+            const hasChoices = Array.isArray(choices) && choices.length > 0;
             const normalizedType = rawType === "multiple_choice" || hasChoices ? "mcq" : "text";
             return {
               id: qq.id,
               text: qq.question_text || qq.text || qq.question || "",
               type: normalizedType,
-              choices: qq.choices || [],
+              choices: choices,
             };
           });
 
@@ -693,10 +695,12 @@ const MockExam = () => {
                             const opts = q.choices.map((c, idx) => `${labels[idx] || String.fromCharCode(65+idx)})${c}`).join(', ');
                             questionText = `${questionText} ${opts}`.trim();
                           }
-                          return {
+                          const payload = {
                             question: questionText,
                             user_answer: answers[qi] || "",
                           };
+                          console.log(`Question ${qi + 1}:`, payload);
+                          return payload;
                         });
 
                         try {
