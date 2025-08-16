@@ -13,7 +13,7 @@ from PyPDF2 import PdfReader
 
 # Always use project root for past_papers dir
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PAST_PAPERS_DIR = os.path.join(PROJECT_ROOT, "backend/past_papers")
+PAST_PAPERS_DIR = os.path.join(PROJECT_ROOT, "past_papers")
 
 BASE_URL = "https://www.library.uq.edu.au/exams/course/"
 
