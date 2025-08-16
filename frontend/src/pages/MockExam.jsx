@@ -8,6 +8,7 @@ import {
   fetchEnrollmentDetails,
   createQuizAndUploadQuestions,
   fetchCourseByCode,
+  fetchQuizzes,
   generateQuestionsJson,
 } from "../api";
 
@@ -171,11 +172,74 @@ const MockExam = () => {
     }
   }, [courseId]);
 
+  // Load quizzes (mock exams) for this course using the course UUID
+  useEffect(() => {
+    if (!courseId) return;
+    let cancelled = false;
+    const loadQuizzes = async () => {
+      try {
+        const courseDetails = await fetchCourseByCode(courseId);
+        const courseUUID = courseDetails?.id;
+        if (cancelled || !courseUUID) return;
+
+        const data = await fetchQuizzes(courseUUID, 1, 50);
+        const items = Array.isArray(data) ? data : data?.results || data?.quizzes || data?.items || [];
+        if (cancelled || !items || items.length === 0) return;
+
+        const mapped = items.map((q) => {
+          const questions = Array.isArray(q.questions) ? q.questions : [];
+          const mappedQuestions = (questions || []).map((qq) => {
+            const rawType = (qq.question_type || "").toString().toLowerCase();
+            const hasChoices = Array.isArray(qq.choices) && qq.choices.length > 0;
+            // Only treat explicit 'multiple_choice' or presence of choices as MCQ;
+            // everything else (including 'text' or unknown types) is treated as text.
+            const normalizedType = rawType === "multiple_choice" || hasChoices ? "mcq" : "text";
+            return {
+              id: qq.id,
+              text: qq.question_text || qq.text || qq.question || "",
+              type: normalizedType,
+              choices: qq.choices || [],
+            };
+          });
+
+          return {
+            id: q.id,
+            name: q.title || q.name || String(q.id) || "Untitled",
+            date: q.created_at || q.updated_at || q.date || "",
+            questions: mappedQuestions,
+          };
+        });
+
+        setMockExams((prev) => {
+          const prevArr = Array.isArray(prev) ? prev : [];
+          const existing = new Set(prevArr.map((e) => e.id));
+          const toAppend = mapped.filter((m) => m && m.id && !existing.has(m.id));
+          if (toAppend.length === 0) return prevArr;
+          return [...prevArr, ...toAppend];
+        });
+      } catch (err) {
+        // non-fatal
+        // console.warn('Failed to load quizzes', err);
+      }
+    };
+
+    loadQuizzes();
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId]);
+
   // Dummy course info (replace with real API if available)
   const courseInfo = {
     code: courseId,
     title: enrollmentDetails?.course_title || "",
   };
+
+  // Safe references for currently selected exam and question to avoid undefined access
+  const selectedExam = selectedMockExamIndex != null ? mockExams[selectedMockExamIndex] : null;
+  const selectedQuestions = Array.isArray(selectedExam?.questions) ? selectedExam.questions : [];
+  const questionCount = selectedQuestions.length;
+  const currentQuestionObj = selectedQuestions[currentQuestionIndex] || null;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -459,7 +523,7 @@ const MockExam = () => {
           </div>
         )}
         {/* Quiz Modal - Single question view with pagination */}
-        {showQuizModal && selectedMockExamIndex != null && mockExams[selectedMockExamIndex] && (
+        {showQuizModal && selectedExam && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
             <div className="relative z-10 w-full max-w-2xl mx-auto rounded-2xl shadow-2xl bg-white dark:bg-gray-900 flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700">
@@ -469,12 +533,12 @@ const MockExam = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
                   <div>
-                    <div className="font-semibold text-gray-800 dark:text-gray-100 truncate">{mockExams[selectedMockExamIndex].name}</div>
-                    <div className="text-xs text-gray-500">{mockExams[selectedMockExamIndex].date}</div>
+                    <div className="font-semibold text-gray-800 dark:text-gray-100 truncate">{selectedExam?.name}</div>
+                    <div className="text-xs text-gray-500">{selectedExam?.date}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="text-sm text-gray-600 dark:text-gray-300">Question {currentQuestionIndex + 1} / {mockExams[selectedMockExamIndex].questions.length}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">Question {Math.min(currentQuestionIndex + 1, questionCount)} / {questionCount}</div>
                   <button
                     className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200/80 dark:bg-gray-700/80 hover:bg-red-500 hover:text-white transition-colors text-gray-700 dark:text-gray-200 shadow"
                     onClick={() => {
@@ -494,12 +558,12 @@ const MockExam = () => {
 
               <div className="p-6 flex-1 flex flex-col gap-4">
                 <div className="text-gray-800 dark:text-gray-100 text-lg">
-                  {mockExams[selectedMockExamIndex].questions[currentQuestionIndex].text}
+                  {currentQuestionObj?.text || 'Question not available.'}
                 </div>
                 {/* Render by question type */}
-                {mockExams[selectedMockExamIndex].questions[currentQuestionIndex].type === 'mcq' ? (
+                {currentQuestionObj?.type === 'mcq' ? (
                   <div className="flex flex-col gap-2">
-                    {mockExams[selectedMockExamIndex].questions[currentQuestionIndex].choices.map((choice, ci) => (
+                    {(currentQuestionObj?.choices || []).map((choice, ci) => (
                       <label key={ci} className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${answers[currentQuestionIndex] === choice ? 'bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800' : 'border border-transparent'}`}>
                         <input
                           type="radio"
