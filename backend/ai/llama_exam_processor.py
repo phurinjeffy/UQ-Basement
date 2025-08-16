@@ -3,13 +3,21 @@ import json
 import requests
 from PyPDF2 import PdfReader
 from dotenv import load_dotenv
-load_dotenv()  # this loads your .env file into os.environ
+import boto3
+from botocore.client import Config
+from io import BytesIO
+load_dotenv()
 
 
 # --------------------------
 # CONFIGURATION
 # --------------------------
-COURSE_FOLDER = "past_papers/DECO2500"
+S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL")
+S3_ACCESS_KEY_ID = os.environ.get("S3_ACCESS_KEY_ID")
+S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY")
+S3_BUCKET = "pdfs"
+
+COURSE_CODE = "DECO2500" 
 NUM_MOCK_QUESTIONS = 10
 OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
@@ -21,12 +29,24 @@ if not OPENROUTER_KEY:
 # --------------------------
 # HELPERS
 # --------------------------
-def read_past_paper_files(folder):
+def read_past_paper_files_from_s3(course_code):
+    session = boto3.session.Session()
+    s3 = session.client(
+        service_name="s3",
+        aws_access_key_id=S3_ACCESS_KEY_ID,
+        aws_secret_access_key=S3_SECRET_ACCESS_KEY,
+        endpoint_url=S3_ENDPOINT_URL,
+        config=Config(signature_version="s3v4"),
+        region_name="us-east-1",
+    )
+    response = s3.list_objects_v2(Bucket=S3_BUCKET, Prefix=f"{course_code}/")
     papers = []
-    for file in os.listdir(folder):
-        if file.endswith(".pdf"):
-            path = os.path.join(folder, file)
-            reader = PdfReader(path)
+    for obj in response.get("Contents", []):
+        key = obj["Key"]
+        if key.endswith(".pdf"):
+            s3_obj = s3.get_object(Bucket=S3_BUCKET, Key=key)
+            pdf_bytes = s3_obj["Body"].read()
+            reader = PdfReader(BytesIO(pdf_bytes))
             text = ""
             for i, page in enumerate(reader.pages):
                 if i == 0:  # skip first page
@@ -85,11 +105,11 @@ def openrouter_chat(prompt):
 # MAIN
 # --------------------------
 if __name__ == "__main__":
-    print("Reading past papers...")
-    papers = read_past_paper_files(COURSE_FOLDER)
+    print("Reading past papers from S3...")
+    papers = read_past_paper_files_from_s3(COURSE_CODE)
     
     if not papers:
-        raise FileNotFoundError(f"No PDF files found in {COURSE_FOLDER}")
+        raise FileNotFoundError(f"No PDF files found in S3 for course {COURSE_CODE}")
     
     first_paper = papers[0]
     questions = preprocess_exam_text(first_paper)
@@ -140,7 +160,7 @@ if __name__ == "__main__":
         start = response.find("{")
         end = response.rfind("}") + 1
         result = json.loads(response[start:end].replace("'", '"'))
-        output_file = os.path.join(COURSE_FOLDER, "past_paper_analysis_with_mock.json")
+        output_file = f"{COURSE_CODE}_past_paper_analysis_with_mock.json"
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=2)
         print("Analysis + mock exam saved to:", output_file)
