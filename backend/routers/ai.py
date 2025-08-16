@@ -65,6 +65,59 @@ async def check_answers_from_file():
     except Exception as e:
         return {"success": False, "error": str(e)}
     
+def upload_checked_answers_to_supabase(json_path, table_name="checked_answers"):
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return False, "Supabase credentials not set."
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    if isinstance(data, dict) and "checked_answers" in data:
+        checked_answers = data["checked_answers"]
+    elif isinstance(data, list):
+        checked_answers = data
+    else:
+        checked_answers = []
+    rows = []
+    for ans in checked_answers:
+        # Each ans should have user_id and quiz_id
+        row = {
+            "user_id": ans.get("user_id"),
+            "quiz_id": ans.get("quiz_id"),
+            "checks": ans,
+        }
+        rows.append(row)
+    url = f"{SUPABASE_URL}/rest/v1/{table_name}"
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation",
+    }
+    for i in range(0, len(rows), 50):
+        batch = rows[i : i + 50]
+        response = requests.post(url, headers=headers, data=json.dumps(batch))
+        if not response.ok:
+            return (
+                False,
+                f"Error uploading batch {i//50+1}: {response.status_code} {response.text}",
+            )
+    return True, f"Uploaded {len(rows)} checked answers to Supabase."
+
+@router.post("/ai/upload-checked-answers-from-file")
+async def upload_checked_answers_from_file():
+    """
+    Upload checked_answers.json to Supabase checked_answers table.
+    """
+    try:
+        PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        json_path = os.path.join(PROJECT_ROOT, "checked_answers.json")
+        if not os.path.exists(json_path):
+            return {"success": False, "error": f"File not found: {json_path}"}
+        ok, msg = upload_checked_answers_to_supabase(json_path)
+        return {"success": ok, "message": msg}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
 @router.post("/ai/get-papers/{course_code}")
 async def get_papers(course_code: str):
     """
