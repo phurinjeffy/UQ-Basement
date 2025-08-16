@@ -31,14 +31,14 @@ async def get_papers(course_code: str):
         result = subprocess.run(
             [
                 sys.executable,
-                os.path.join(PROJECT_ROOT, "ai/extractText.py"),
+                os.path.join(PROJECT_ROOT, "ai/download_past_papers.py"),
                 course_code,
                 "download",
             ],
             capture_output=True,
             timeout=300,
         )
-        # If extractText.py returns False (no past papers), check stdout
+        # If download_past_papers.py returns False (no past papers), check stdout
         stdout = result.stdout.decode()
         if "No past papers found" in stdout:
             return {
