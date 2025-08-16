@@ -49,7 +49,8 @@ async def create_quiz(quiz: QuizCreate):
                 "description": quiz.description,
                 "course_id": str(quiz.course_id),
                 "topic": quiz.topic,
-                "time_limit": quiz.time_limit
+                "time_limit": quiz.time_limit,
+                "user_id": str(quiz.user_id)
             }
             
             # Create the quiz
