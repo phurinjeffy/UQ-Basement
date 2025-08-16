@@ -44,7 +44,9 @@ const MockExam = () => {
           </button>
           {error && <div className="text-red-500 mb-2">{error}</div>}
           {pastPapers.length === 0 ? (
-            <div className="text-gray-500">No past papers found for this course.</div>
+            <div className="text-gray-500">
+              No past papers found for this course.
+            </div>
           ) : (
             <ul className="space-y-2">
               {pastPapers.map((pdf) => (
