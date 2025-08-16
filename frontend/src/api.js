@@ -71,8 +71,8 @@ export async function updateEnrollments(userId, courses) {
     semester: "Semester 2",
     year: 2025,
     grade: "",
-    exam_date: course.examDate,
-    exam_time: course.examTime,
+    exam_date: course.examDate || null,
+    exam_time: course.examTime || null
   }));
   const res = await axios.put(`${API_BASE}/enrollments/update?user_id=${userId}`, payload);
   return res.data;
