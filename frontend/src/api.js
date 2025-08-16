@@ -94,7 +94,7 @@ export async function fetchEnrollmentDetails(userId, courseName) {
 }
 
 // Create a quiz and upload questions in one step (Mock Exam automation)
-export async function createQuizAndUploadQuestions({ course_code, title, course_id, topic, description, time_limit }) {
+export async function createQuizAndUploadQuestions({ course_code, title, course_id, topic, description, time_limit, user_id }) {
     try {
         const res = await axios.post(
             `${API_BASE}/ai/create-quiz-and-upload-questions/${course_code}`,
@@ -106,6 +106,7 @@ export async function createQuizAndUploadQuestions({ course_code, title, course_
                     topic,
                     description,
                     time_limit,
+                    user_id,
                 },
                 headers: {
                     "Content-Type": "application/json",

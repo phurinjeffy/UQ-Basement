@@ -483,6 +483,17 @@ const MockExam = () => {
                         return;
                       }
                       // Step 2: Upload questions to Supabase (create quiz)
+                      // Extract user_id from JWT token in localStorage
+                      let userId = "";
+                      try {
+                        const token = localStorage.getItem("token");
+                        if (token) {
+                          const payload = JSON.parse(atob(token.split(".")[1]));
+                          userId = payload.user_id;
+                        }
+                      } catch (error) {
+                        console.error("Failed to extract user ID from token:", error);
+                      }
                       const quizResp = await createQuizAndUploadQuestions({
                         course_code: courseId,
                         title: `Mock Exam for ${courseId}`,
@@ -490,6 +501,7 @@ const MockExam = () => {
                         description: "Generated mock exam",
                         topic: "test",
                         time_limit: 60,
+                        user_id: userId,
                       });
                       console.log("Quiz API response:", quizResp);
                       if (quizResp && quizResp.quiz) {
