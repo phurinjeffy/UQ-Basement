@@ -1,7 +1,14 @@
 import { useRef } from "react";
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { getPapers, listPastPapers, getPastPaperPdfUrl, fetchEnrollmentDetails, createQuiz, fetchCourseByCode } from "../api";
+import {
+  getPapers,
+  listPastPapers,
+  getPastPaperPdfUrl,
+  fetchEnrollmentDetails,
+  createQuizAndUploadQuestions,
+  fetchCourseByCode,
+} from "../api";
 
 const getPaperMeta = (filename) => {
   // Example: Semester_One_Final_Examinations_2021_DECO2500.pdf
@@ -78,21 +85,23 @@ const MockExam = () => {
   const [generating, setGenerating] = useState(false);
   const [mockError, setMockError] = useState("");
   const [enrollmentDetails, setEnrollmentDetails] = useState(null);
-  const timeLeft = useCountdown(enrollmentDetails?.exam_date, enrollmentDetails?.exam_time) || null;
+  const timeLeft =
+    useCountdown(enrollmentDetails?.exam_date, enrollmentDetails?.exam_time) ||
+    null;
 
   let userId = "";
-      try {
-        // Extract userId from JWT token in localStorage
-        const token = localStorage.getItem("token");
-        if (token) {
-          // Decode JWT (base64 decode payload)
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          userId = payload.user_id;
-        }
-        if (!userId) return;
-      } catch (error) {
-        console.error("Failed to extract user ID from token:", error);
-      }
+  try {
+    // Extract userId from JWT token in localStorage
+    const token = localStorage.getItem("token");
+    if (token) {
+      // Decode JWT (base64 decode payload)
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      userId = payload.user_id;
+    }
+    if (!userId) return;
+  } catch (error) {
+    console.error("Failed to extract user ID from token:", error);
+  }
 
   // Prevent background scroll when modal is open
   useEffect(() => {
@@ -235,37 +244,69 @@ const MockExam = () => {
           {!enrollmentDetails ? (
             <div className="grid grid-flow-col gap-5 text-center auto-cols-max">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="flex flex-col w-16 h-24 p-2 bg-neutral rounded-box text-neutral-content">
+                <div
+                  key={i}
+                  className="flex flex-col w-16 h-24 p-2 bg-neutral rounded-box text-neutral-content"
+                >
                   <div className="skeleton h-12 w-12 bg-gray-500"></div>
                   <div className="skeleton h-4 w-8 bg-gray-500 mt-3"></div>
                 </div>
               ))}
             </div>
-          ) : timeLeft && (
-            <div className="grid grid-flow-col gap-5 text-center auto-cols-max">
-            <div className="flex flex-col p-2 bg-neutral rounded-box text-neutral-content">
-              <span className="countdown font-mono text-5xl">
-                <span style={{"--value":timeLeft.days} /* as React.CSSProperties */ } aria-live="polite">{timeLeft.days}</span>
-              </span>
-              days
-            </div>
-            {(timeLeft.hours != null && timeLeft.minutes != null) && (
-              <>
-            <div className="flex flex-col p-2 bg-neutral rounded-box text-neutral-content">
-              <span className="countdown font-mono text-5xl">
-                <span style={{"--value":timeLeft.hours} /* as React.CSSProperties */ } aria-live="polite">{timeLeft.hours}</span>
-              </span>
-              hours
-            </div>
-            <div className="flex flex-col p-2 bg-neutral rounded-box text-neutral-content">
-              <span className="countdown font-mono text-5xl">
-                <span style={{"--value":timeLeft.minutes} /* as React.CSSProperties */ } aria-live="polite">{timeLeft.minutes}</span>
-              </span>
-              min
-            </div>
-            </>
-            )}
-          </div>
+          ) : (
+            timeLeft && (
+              <div className="grid grid-flow-col gap-5 text-center auto-cols-max">
+                <div className="flex flex-col p-2 bg-neutral rounded-box text-neutral-content">
+                  <span className="countdown font-mono text-5xl">
+                    <span
+                      style={
+                        {
+                          "--value": timeLeft.days,
+                        } /* as React.CSSProperties */
+                      }
+                      aria-live="polite"
+                    >
+                      {timeLeft.days}
+                    </span>
+                  </span>
+                  days
+                </div>
+                {timeLeft.hours != null && timeLeft.minutes != null && (
+                  <>
+                    <div className="flex flex-col p-2 bg-neutral rounded-box text-neutral-content">
+                      <span className="countdown font-mono text-5xl">
+                        <span
+                          style={
+                            {
+                              "--value": timeLeft.hours,
+                            } /* as React.CSSProperties */
+                          }
+                          aria-live="polite"
+                        >
+                          {timeLeft.hours}
+                        </span>
+                      </span>
+                      hours
+                    </div>
+                    <div className="flex flex-col p-2 bg-neutral rounded-box text-neutral-content">
+                      <span className="countdown font-mono text-5xl">
+                        <span
+                          style={
+                            {
+                              "--value": timeLeft.minutes,
+                            } /* as React.CSSProperties */
+                          }
+                          aria-live="polite"
+                        >
+                          {timeLeft.minutes}
+                        </span>
+                      </span>
+                      min
+                    </div>
+                  </>
+                )}
+              </div>
+            )
           )}
         </div>
 
@@ -333,7 +374,10 @@ const MockExam = () => {
                 ) : noPapers ? (
                   <span>No Past Papers</span>
                 ) : (
-                  <div className="tooltip tooltip-left" data-tip="You may be redirected to UQ Authenticate">
+                  <div
+                    className="tooltip tooltip-left"
+                    data-tip="You may be redirected to UQ Authenticate"
+                  >
                     <span>Get Past Papers</span>
                   </div>
                 )}
@@ -426,21 +470,38 @@ const MockExam = () => {
                     // Fetch course details to get UUID by code
                     const courseDetails = await fetchCourseByCode(courseId);
                     const courseUUID = courseDetails.id;
-                    const quiz = await createQuiz({
-                      course_id: courseUUID,
+                    const quizResp = await createQuizAndUploadQuestions({
+                      course_code: courseId,
                       title: `Mock Exam for ${courseId}`,
+                      course_id: courseUUID,
                       description: "Generated mock exam",
                       topic: "test",
                       time_limit: 60,
                     });
-                    setMockExams([...(mockExams || []), quiz]);
+                    console.log("Quiz API response:", quizResp);
+                    if (quizResp && quizResp.quiz) {
+                      setMockExams([...(mockExams || []), quizResp.quiz]);
+                    } else if (
+                      quizResp &&
+                      quizResp.success === false &&
+                      quizResp.error
+                    ) {
+                      setMockError(quizResp.error);
+                    } else {
+                      setMockError(
+                        "Quiz was not created. Please try again or check backend logs."
+                      );
+                    }
                   } catch (err) {
                     setMockError(
                       err.response?.data?.detail ||
-                      err.message ||
-                      "Failed to generate quiz. Try again."
+                        err.message ||
+                        "Failed to generate quiz. Try again."
                     );
-                    console.error("Quiz creation error:", err.response?.data || err);
+                    console.error(
+                      "Quiz creation error:",
+                      err.response?.data || err
+                    );
                   }
                   setGenerating(false);
                 }}

@@ -44,38 +44,38 @@ export function getPastPaperPdfUrl(courseCode, filename) {
 
 export async function fetchCourses(hint = "") {
     const params = {
-      limit: 6,
-      offset: 0,
-      include_enrollment_count: false,
+        limit: 6,
+        offset: 0,
+        include_enrollment_count: false,
     };
-  
+
     if (hint) {
-      params.name = hint;
+        params.name = hint;
     }
-  
+
     const res = await axios.get(`${API_BASE}/courses`, { params });
     return res.data.courses || [];
-  }
+}
 
 // Fetch course details by course_id
 export async function fetchCourseById(courseId) {
-  const res = await axios.get(`${API_BASE}/courses/${courseId}`);
-  return res.data;
+    const res = await axios.get(`${API_BASE}/courses/${courseId}`);
+    return res.data;
 }
 
 export async function updateEnrollments(userId, courses) {
     console.log("here", courses);
-  const payload = courses.map(course => ({
-    user_id: userId,
-    course_id: course.id,
-    semester: "Semester 2",
-    year: 2025,
-    grade: "",
-    exam_date: course.examDate || null,
-    exam_time: course.examTime || null
-  }));
-  const res = await axios.put(`${API_BASE}/enrollments/update?user_id=${userId}`, payload);
-  return res.data;
+    const payload = courses.map(course => ({
+        user_id: userId,
+        course_id: course.id,
+        semester: "Semester 2",
+        year: 2025,
+        grade: "",
+        exam_date: course.examDate || null,
+        exam_time: course.examTime || null
+    }));
+    const res = await axios.put(`${API_BASE}/enrollments/update?user_id=${userId}`, payload);
+    return res.data;
 }
 
 export async function getEnrollments(userId) {
@@ -93,36 +93,37 @@ export async function fetchEnrollmentDetails(userId, courseName) {
     return res.data;
 }
 
-// Create a quiz (mock exam)
-export async function createQuiz({ course_id, title, description, topic, time_limit }) {
-  try {
-    const res = await axios.post(
-      `${API_BASE}/quiz/`, // trailing slash
-      {
-        title,
-        description,
-        course_id,
-        topic,
-        time_limit,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
-    );
-    return res.data;
-  } catch (err) {
-    console.error("Quiz creation error:", err.response?.data || err);
-    throw err;
-  }
+// Create a quiz and upload questions in one step (Mock Exam automation)
+export async function createQuizAndUploadQuestions({ course_code, title, course_id, topic, description, time_limit }) {
+    try {
+        const res = await axios.post(
+            `${API_BASE}/ai/create-quiz-and-upload-questions/${course_code}`,
+            {},
+            {
+                params: {
+                    title,
+                    course_id,
+                    topic,
+                    description,
+                    time_limit,
+                },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            }
+        );
+        return res.data;
+    } catch (err) {
+        console.error("Quiz+Questions creation error:", err.response?.data || err);
+        throw err;
+    }
 }
 
 // Fetch course details by code (e.g., DECO2500)
 export async function fetchCourseByCode(courseCode) {
-  const res = await axios.get(`${API_BASE}/courses/search-by-code`, {
-    params: { code: courseCode }
-  });
-  return res.data;
+    const res = await axios.get(`${API_BASE}/courses/search-by-code`, {
+        params: { code: courseCode }
+    });
+    return res.data;
 }
