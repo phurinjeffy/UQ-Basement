@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
+import json
 import sys
 
 sys.stdout.reconfigure(encoding="utf-8")
@@ -12,9 +13,12 @@ from botocore.client import Config
 
 router = APIRouter()
 # Always use project root for past_papers dir
-
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 # S3/Supabase config
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+
 S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL")
 S3_ACCESS_KEY_ID = os.environ.get("S3_ACCESS_KEY_ID")
 S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY")
@@ -151,3 +155,55 @@ async def generate_questions_json(course_code: str):
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+import requests
+
+
+def upload_questions_to_supabase(json_path, table_name="questions"):
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return False, "Supabase credentials not set."
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    questions = data.get("questions", [])
+    # Only keep specified columns
+    rows = []
+    for q in questions:
+        row = {
+            "question_text": q.get("question_text", ""),
+            "topic": q.get("topic", ""),
+            "question_type": q.get("question_type", ""),
+            "sample_answer": q.get("sample_answer", ""),
+            "correct_answer": q.get("correct_answer", ""),
+        }
+        rows.append(row)
+    # Insert in batches of 50 using Supabase REST API
+    url = f"{SUPABASE_URL}/rest/v1/{table_name}"
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation",
+    }
+    for i in range(0, len(rows), 50):
+        batch = rows[i : i + 50]
+        response = requests.post(url, headers=headers, data=json.dumps(batch))
+        if not response.ok:
+            return (
+                False,
+                f"Error uploading batch {i//50+1}: {response.status_code} {response.text}",
+            )
+    return True, f"Uploaded {len(rows)} questions to Supabase."
+
+
+@router.post("/ai/upload-questions-to-supabase/{course_code}")
+async def upload_questions_to_supabase_endpoint(course_code: str):
+    """
+    Convert {COURSE_CODE}_mock.json to rows and upload to Supabase 'questions' table with specified columns.
+    """
+    filename = f"{course_code}_mock.json"
+    json_path = os.path.join(PROJECT_ROOT, filename)
+    if not os.path.exists(json_path):
+        return {"success": False, "error": f"JSON file not found: {json_path}"}
+    ok, msg = upload_questions_to_supabase(json_path)
+    return {"success": ok, "message": msg}
