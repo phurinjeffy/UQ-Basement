@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { getPapers, listPastPapers, getPastPaperPdfUrl } from "../api";
@@ -27,6 +28,17 @@ const MockExam = () => {
   const [mockExams, setMockExams] = useState([]); // Placeholder for generated exams
   const [generating, setGenerating] = useState(false);
   const [mockError, setMockError] = useState("");
+
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    if (showModal) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [showModal]);
 
   const fetchPapers = async () => {
     setDownloading(true);
@@ -291,11 +303,32 @@ const MockExam = () => {
               {/* Modern Top Bar */}
               <div className="flex items-center justify-between px-6 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3">
-                  <svg className="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 7V3a1 1 0 011-1h8a1 1 0 011 1v18a1 1 0 01-1 1H8a1 1 0 01-1-1v-4" />
-                    <rect x="3" y="7" width="8" height="13" rx="2" fill="currentColor" className="text-indigo-100 dark:text-gray-800" />
+                  <svg
+                    className="w-6 h-6 text-indigo-500"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M7 7V3a1 1 0 011-1h8a1 1 0 011 1v18a1 1 0 01-1 1H8a1 1 0 01-1-1v-4"
+                    />
+                    <rect
+                      x="3"
+                      y="7"
+                      width="8"
+                      height="13"
+                      rx="2"
+                      fill="currentColor"
+                      className="text-indigo-100 dark:text-gray-800"
+                    />
                   </svg>
-                  <span className="font-semibold text-gray-800 dark:text-gray-100 truncate max-w-xs sm:max-w-md" title={pdfView}>
+                  <span
+                    className="font-semibold text-gray-800 dark:text-gray-100 truncate max-w-xs sm:max-w-md"
+                    title={pdfView}
+                  >
                     {pdfView}
                   </span>
                 </div>
@@ -307,8 +340,18 @@ const MockExam = () => {
                   }}
                   aria-label="Close PDF Viewer"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
