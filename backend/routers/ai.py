@@ -55,4 +55,9 @@ async def get_past_paper_pdf(course_code: str, filename: str):
     file_path = os.path.join(PAST_PAPERS_DIR, course_code, filename)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(file_path, media_type="application/pdf", filename=filename)
+    return FileResponse(
+        file_path,
+        media_type="application/pdf",
+        filename=filename,
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
+    )

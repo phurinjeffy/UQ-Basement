@@ -21,7 +21,7 @@ app.add_middleware(
     allow_origins=["*"],  # Or specify your frontend URL
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*", "Range"],  # Explicitly allow Range header for PDF streaming
 )
 
 
