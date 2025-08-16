@@ -25,9 +25,9 @@ export async function deleteUser(userId) {
 }
 
 // AI endpoints for past papers
-export async function extractTextForCourse(courseCode) {
-    // Triggers backend to download and extract all PDFs for a course
-    const res = await axios.post(`${API_BASE}/ai/extract-text/${courseCode}`);
+export async function getPapers(courseCode) {
+    // Triggers backend to download all PDFs for a course
+    const res = await axios.post(`${API_BASE}/ai/get-papers/${courseCode}`);
     return res.data;
 }
 
@@ -40,10 +40,4 @@ export async function listPastPapers(courseCode) {
 export function getPastPaperPdfUrl(courseCode, filename) {
     // Returns direct URL to download/view PDF
     return `${API_BASE}/ai/past-papers/${courseCode}/${filename}`;
-}
-
-export async function getPastPaperText(courseCode, txtfile) {
-    // Returns extracted text for a given txt file
-    const res = await axios.get(`${API_BASE}/ai/past-papers/${courseCode}/text/${txtfile}`);
-    return res.data;
 }
