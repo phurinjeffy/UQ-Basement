@@ -283,28 +283,40 @@ const MockExam = () => {
 
         {/* Modal PDF Viewer - Full Screen */}
         {showModal && pdfView && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">
-            <div className="absolute inset-0 flex flex-col">
-              <div className="flex justify-end p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            {/* Blurred background */}
+            <div className="absolute inset-0 bg-black/10 backdrop-blur-md transition-all duration-200" />
+            {/* Modal box */}
+            <div className="relative z-10 w-full max-w-4xl mx-auto rounded-2xl shadow-2xl bg-white dark:bg-gray-900 flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700">
+              {/* Modern Top Bar */}
+              <div className="flex items-center justify-between px-6 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <svg className="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 7V3a1 1 0 011-1h8a1 1 0 011 1v18a1 1 0 01-1 1H8a1 1 0 01-1-1v-4" />
+                    <rect x="3" y="7" width="8" height="13" rx="2" fill="currentColor" className="text-indigo-100 dark:text-gray-800" />
+                  </svg>
+                  <span className="font-semibold text-gray-800 dark:text-gray-100 truncate max-w-xs sm:max-w-md" title={pdfView}>
+                    {pdfView}
+                  </span>
+                </div>
                 <button
-                  className="btn btn-error btn-lg text-lg px-6 py-2 rounded shadow-lg"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200/80 dark:bg-gray-700/80 hover:bg-red-500 hover:text-white transition-colors text-gray-700 dark:text-gray-200 shadow"
                   onClick={() => {
                     setShowModal(false);
                     setPdfView(null);
                   }}
                   aria-label="Close PDF Viewer"
                 >
-                  ✕ Close
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
               <div className="flex-1 flex flex-col items-center justify-center">
-                <div className="mb-2 font-semibold text-center text-white text-lg bg-black bg-opacity-40 px-4 py-2 rounded">
-                  {pdfView}
-                </div>
                 <iframe
                   src={getPastPaperPdfUrl(courseId, pdfView)}
                   title={pdfView}
-                  className="w-full h-full flex-1 border-none rounded-b-lg bg-white dark:bg-gray-900"
+                  className="w-full h-full flex-1 border-none bg-white dark:bg-gray-900"
                   style={{ minHeight: "80vh" }}
                 />
               </div>
