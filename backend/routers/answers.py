@@ -19,26 +19,41 @@ def get_supabase_headers():
 
 router = APIRouter()
 
-class Answer(BaseModel):
-    question: str
-    user_answer: str
 
-@router.post("/add-answer")
-async def add_answer(answer: Answer):
-    """Add a user answer to Supabase"""
+
+class BulkAnswersRequest(BaseModel):
+    user_id: str
+    answers: list[dict]
+
+
+
+@router.post("/add-answers")
+async def add_answers_bulk(request: BulkAnswersRequest):
+    """Add multiple answers for a user from a JSON payload"""
     try:
+        user_id = request.user_id
+        answers = request.answers
+        # Prepare data for Supabase bulk insert
+        supabase_answers = [
+            {
+                "question": a["question"],
+                "user_answer": a["user_answer"],
+                "user_id": user_id
+            }
+            for a in answers
+        ]
         async with httpx.AsyncClient() as client:
             resp = await client.post(
                 f"{SUPABASE_REST_URL}/answers",
                 headers=get_supabase_headers(),
-                json=answer.dict()
+                json=supabase_answers
             )
             if resp.status_code not in [200, 201]:
                 raise HTTPException(
                     status_code=resp.status_code,
                     detail=f"Supabase error: {resp.text}"
                 )
-            return {"message": "Answer saved", "data": resp.json()}
+            return {"message": "Answers saved", "data": resp.json()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
