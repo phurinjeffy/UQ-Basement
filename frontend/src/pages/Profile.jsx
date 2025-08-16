@@ -9,13 +9,22 @@ function Profile() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (!stored) {
+    // Extract userId from JWT token
+    const token = localStorage.getItem("token");
+    if (!token) {
       navigate("/", { replace: true });
       return;
     }
-    const u = JSON.parse(stored);
-    fetchUserProfile(u.id)
+    let userId = "";
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      userId = payload.user_id;
+    } catch {}
+    if (!userId) {
+      navigate("/", { replace: true });
+      return;
+    }
+    fetchUserProfile(userId)
       .then((res) => {
         setUser(res.user);
         setLoading(false);
@@ -35,7 +44,7 @@ function Profile() {
       return;
     try {
       await deleteUser(user.id);
-      localStorage.removeItem("user");
+  localStorage.removeItem("token");
       navigate("/", { replace: true });
     } catch (err) {
       setError("Failed to delete account");

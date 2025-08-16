@@ -4,10 +4,7 @@ import { loginUser, signupUser } from "../api";
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem("user");
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -17,7 +14,6 @@ export function AuthProvider({ children }) {
     try {
       const res = await loginUser(email, password);
       setUser(res.user);
-      localStorage.setItem("user", JSON.stringify(res.user));
       if (res.token) {
         localStorage.setItem("token", res.token);
       }
@@ -36,7 +32,6 @@ export function AuthProvider({ children }) {
     try {
       const res = await signupUser({ email, password });
       setUser(res.user);
-      localStorage.setItem("user", JSON.stringify(res.user));
       if (res.token) {
         localStorage.setItem("token", res.token);
       }
@@ -51,7 +46,6 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("user");
     localStorage.removeItem("token");
   };
 
