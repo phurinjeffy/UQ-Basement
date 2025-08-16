@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { getPapers, listPastPapers, getPastPaperPdfUrl, fetchEnrollmentDetails } from "../api";
+import { getPapers, listPastPapers, getPastPaperPdfUrl, fetchEnrollmentDetails, createQuiz, fetchCourseByCode } from "../api";
 
 const getPaperMeta = (filename) => {
   // Example: Semester_One_Final_Examinations_2021_DECO2500.pdf
@@ -419,19 +419,30 @@ const MockExam = () => {
               <h2 className="text-lg font-semibold">Mock Exams</h2>
               <button
                 className="btn btn-secondary"
-                onClick={() => {
+                onClick={async () => {
                   setGenerating(true);
                   setMockError("");
-                  setTimeout(() => {
-                    setMockExams([
-                      ...(mockExams || []),
-                      {
-                        name: `Mock Exam ${mockExams.length + 1}`,
-                        date: new Date().toLocaleString(),
-                      },
-                    ]);
-                    setGenerating(false);
-                  }, 1500);
+                  try {
+                    // Fetch course details to get UUID by code
+                    const courseDetails = await fetchCourseByCode(courseId);
+                    const courseUUID = courseDetails.id;
+                    const quiz = await createQuiz({
+                      course_id: courseUUID,
+                      title: `Mock Exam for ${courseId}`,
+                      description: "Generated mock exam",
+                      topic: "test",
+                      time_limit: 60,
+                    });
+                    setMockExams([...(mockExams || []), quiz]);
+                  } catch (err) {
+                    setMockError(
+                      err.response?.data?.detail ||
+                      err.message ||
+                      "Failed to generate quiz. Try again."
+                    );
+                    console.error("Quiz creation error:", err.response?.data || err);
+                  }
+                  setGenerating(false);
                 }}
                 disabled={generating}
               >
