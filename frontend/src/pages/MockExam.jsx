@@ -134,13 +134,18 @@ const MockExam = () => {
 
   useEffect(() => {
     setNoPapers(false); // Only reset on course change
-    setDownloading(downloadingRef.current); // Restore downloading state on mount/tab switch
+    setDownloading(true); // Set downloading state immediately when fetching papers
+    downloadingRef.current = true;
     listPastPapers(courseId)
       .then((papers) => {
         setPastPapers(papers);
+        setDownloading(false);
+        downloadingRef.current = false;
       })
       .catch(() => {
         setPastPapers([]);
+        setDownloading(false);
+        downloadingRef.current = false;
       });
   }, [courseId]);
 
@@ -213,14 +218,30 @@ const MockExam = () => {
             </span>
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold mb-1">
-              {courseInfo.code}{" "}
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300 text-sm">
-              {courseInfo.title}
-            </p>
+            {!enrollmentDetails ? (
+              <>
+                <h1 className="text-2xl font-bold mb-1">{courseInfo.code}</h1>
+                <div className="skeleton h-4 w-48 bg-gray-200 dark:bg-gray-600"></div>
+              </>
+            ) : (
+              <>
+                <h1 className="text-2xl font-bold mb-1">{courseInfo.code}</h1>
+                <p className="text-gray-600 dark:text-gray-300 text-sm">
+                  {courseInfo.title}
+                </p>
+              </>
+            )}
           </div>
-          {timeLeft && (
+          {!enrollmentDetails ? (
+            <div className="grid grid-flow-col gap-5 text-center auto-cols-max">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex flex-col w-16 h-24 p-2 bg-neutral rounded-box text-neutral-content">
+                  <div className="skeleton h-12 w-12 bg-gray-500"></div>
+                  <div className="skeleton h-4 w-8 bg-gray-500 mt-3"></div>
+                </div>
+              ))}
+            </div>
+          ) : timeLeft && (
             <div className="grid grid-flow-col gap-5 text-center auto-cols-max">
             <div className="flex flex-col p-2 bg-neutral rounded-box text-neutral-content">
               <span className="countdown font-mono text-5xl">
@@ -312,14 +333,32 @@ const MockExam = () => {
                 ) : noPapers ? (
                   <span>No Past Papers</span>
                 ) : (
-                  <span>Get Past Papers</span>
+                  <div className="tooltip tooltip-left" data-tip="You may be redirected to UQ Authenticate">
+                    <span>Get Past Papers</span>
+                  </div>
                 )}
               </button>
             </div>
             {error && !noPapers && (
               <div className="text-red-500 mb-2">{error}</div>
             )}
-            {noPapers ? (
+            {downloading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[...Array(4)].map((_, index) => (
+                  <div
+                    key={index}
+                    className="bg-white dark:bg-gray-700 rounded-lg shadow p-4 flex flex-col gap-2 border border-gray-100 dark:border-gray-600"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="skeleton w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                      <div className="skeleton w-32 h-6 bg-gray-300 dark:bg-gray-600"></div>
+                    </div>
+                    <div className="skeleton w-full h-4 bg-gray-200 dark:bg-gray-500 mb-2"></div>
+                    <div className="skeleton w-24 h-8 bg-gray-300 dark:bg-gray-600 mt-auto"></div>
+                  </div>
+                ))}
+              </div>
+            ) : noPapers ? (
               <div className="text-gray-500">
                 No past papers found for this course.
               </div>
