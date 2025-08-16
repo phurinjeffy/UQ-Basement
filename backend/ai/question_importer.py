@@ -27,7 +27,7 @@ class QuestionImporter:
                 json_data = json.load(file)
             
             print(f"📁 Reading JSON file: {file_path}")
-            print(f"📊 Found {len(json_data.get('questions', []))} questions and {len(json_data.get('mock_exam', []))} mock exam questions")
+            print(f"📊 Found {len(json_data.get('questions', []))} questions.")
             
             # Send to bulk import endpoint
             async with httpx.AsyncClient(timeout=60.0) as client:
@@ -66,7 +66,9 @@ class QuestionImporter:
             return {"success": False, "error": error_msg}
             
         except Exception as e:
-            error_msg = f"Unexpected error: {str(e)}"
+            import traceback
+            tb = traceback.format_exc()
+            error_msg = f"Unexpected error: {str(e)}\nTraceback:\n{tb}"
             print(f"❌ {error_msg}")
             return {"success": False, "error": error_msg}
     

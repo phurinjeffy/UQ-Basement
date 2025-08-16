@@ -121,10 +121,6 @@ async def bulk_import_questions(import_data: BulkImportRequest):
         if import_data.questions:
             all_questions.extend(import_data.questions)
         
-        # Process mock exam questions
-        if import_data.mock_exam:
-            all_questions.extend(import_data.mock_exam)
-        
         created_questions = []
         errors = []
         skipped_count = 0
