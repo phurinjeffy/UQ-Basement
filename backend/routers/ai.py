@@ -1,3 +1,4 @@
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 import json
@@ -27,6 +28,43 @@ S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY")
 S3_BUCKET = "pdfs"  # Change to your bucket name if different
 
 
+@router.post("/ai/check-answers-from-file")
+async def check_answers_from_file():
+    """
+    Run llama_answer_processor.py on user_answers.json and return logs/results.
+    """
+    try:
+        PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        input_path = os.path.join(PROJECT_ROOT, "user_answers.json")
+        if not os.path.exists(input_path):
+            return {"success": False, "error": "user_answers.json not found"}
+        proc = subprocess.run(
+            [sys.executable, os.path.join(PROJECT_ROOT, "ai/llama_answer_processor.py"), input_path],
+            capture_output=True,
+            timeout=600,
+        )
+        stdout = proc.stdout.decode()
+        stderr = proc.stderr.decode()
+        checked_path = os.path.join(PROJECT_ROOT, "checked_answers.json")
+        if proc.returncode != 0 or not os.path.exists(checked_path):
+            return {
+                "success": False,
+                "stdout": stdout,
+                "stderr": stderr,
+                "error": "AI answer checking failed or output not found."
+            }
+        # Optionally, return the checked answers
+        with open(checked_path, "r", encoding="utf-8") as f:
+            checked = json.load(f)
+        return {
+            "success": True,
+            "stdout": stdout,
+            "stderr": stderr,
+            "checked_answers": checked
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    
 @router.post("/ai/get-papers/{course_code}")
 async def get_papers(course_code: str):
     """
