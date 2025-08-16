@@ -1,23 +1,20 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, status
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 import os
-from typing import List
+import subprocess
 
 router = APIRouter()
-
 PAST_PAPERS_DIR = os.path.join(os.getcwd(), "past_papers")
 
 
-@router.post("/ai/extract-text/{course_code}")
-async def extract_text_and_store(course_code: str):
+@router.post("/ai/get-papers/{course_code}")
+async def get_papers(course_code: str):
     """
-    Run the extractText.py script for a course, download and extract all PDFs, and store extracted text and PDFs.
+    Download all PDFs for a course using Selenium (login required). If already downloaded, does nothing.
     """
-    import subprocess
-
     try:
         result = subprocess.run(
-            ["python3", "backend/ai/extractText.py", course_code],
+            ["python3", "backend/ai/extractText.py", course_code, "download"],
             capture_output=True,
             timeout=300,
         )
@@ -31,7 +28,7 @@ async def extract_text_and_store(course_code: str):
                 },
             )
         return {
-            "message": "Extraction complete",
+            "message": "Download complete",
             "output": result.stdout.decode(),
             "stderr": result.stderr.decode(),
         }
@@ -53,22 +50,7 @@ async def list_past_papers(course_code: str):
 
 @router.get("/ai/past-papers/{course_code}/{filename}")
 async def get_past_paper_pdf(course_code: str, filename: str):
-    """
-    Download a specific past paper PDF for a course.
-    """
     file_path = os.path.join(PAST_PAPERS_DIR, course_code, filename)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(file_path, media_type="application/pdf", filename=filename)
-
-
-@router.get("/ai/past-papers/{course_code}/text/{txtfile}")
-async def get_past_paper_text(course_code: str, txtfile: str):
-    """
-    Get extracted text for a specific past paper.
-    """
-    file_path = os.path.join(PAST_PAPERS_DIR, course_code, txtfile)
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Text file not found")
-    with open(file_path, "r", encoding="utf-8") as f:
-        return {"text": f.read()}
