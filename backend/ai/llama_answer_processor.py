@@ -42,17 +42,17 @@ def check_answers_with_ai(input_json, output_filename="checked_answers.json"):
     answers = input_json["answers"]
     prompt = (
         "You are an academic assistant. For each user answer, check if it is correct. "
-        "Return a JSON array with objects containing: id, question, userAnswer, result (correct/wrong), and realAnswer (the correct answer). "
+        "Return a JSON array with objects containing: id, question, userAnswer, user_id, quiz_id, result (correct/wrong), and realAnswer (the correct answer). "
         "If the answer is partially correct, mark as 'wrong' and provide the correct answer. "
         "Output ONLY valid JSON. Do NOT include any text, comments, or code block markers.\n\n"
         "Input format:\n"
-        "{\n  'answers': [\n    { 'id': '...', 'question': '...', 'user_answer': '...' }, ... ]\n}\n\n"
+        "{\n  'answers': [\n    { 'id': '...', 'question': '...', 'user_answer': '...', 'user_id': '...', 'quiz_id': '...' }, ... ]\n}\n\n"
         "Output format:\n"
-        "[\n  { 'id': '...', 'question': '...', 'userAnswer': '...', 'result': 'correct', 'realAnswer': '...' }, ... ]\n]"
+        "[\n  { 'id': '...', 'question': '...', 'userAnswer': '...', 'user_id': '...', 'quiz_id': '...', 'result': 'correct', 'realAnswer': '...' }, ... ]\n]"
     )
     # Build question list for prompt
     for a in answers:
-        prompt += f"\nQuestion: {a['question']}\nUser Answer: {a['user_answer']}"
+        prompt += f"\nID: {a.get('id', '')}\nQuestion: {a.get('question', '')}\nUser Answer: {a.get('user_answer', '')}\nUser ID: {a.get('user_id', '')}\nQuiz ID: {a.get('quiz_id', '')}"
     print(f"Sending {len(answers)} answers to AI for checking...")
     response = openrouter_chat(prompt)
     print("Raw AI response:")
@@ -74,6 +74,14 @@ def check_answers_with_ai(input_json, output_filename="checked_answers.json"):
     print(json_str)
     try:
         result = json.loads(json_str)
+        # Post-process to ensure result is 'correct' or 'wrong'
+        for item in result:
+            res = str(item.get("result", "")).strip().lower()
+            # Treat empty, unknown, incorrect, invalid, or anything not 'correct' as 'wrong'
+            if res == "correct":
+                item["result"] = "correct"
+            else:
+                item["result"] = "wrong"
         with open(output_filename, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=2)
         print("Checked answers saved to:", output_filename)
