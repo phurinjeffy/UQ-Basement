@@ -12,6 +12,18 @@ const Dashboard = () => {
     { id: 4, name: "CSSE3200", title: "Software Process" },
   ]);
 
+  // Handler for confirming courses from AddCourses
+  const handleConfirmCourses = (newCourses) => {
+    setCourses(
+      newCourses.map((c, idx) => ({
+        id: idx + 1,
+        name: c.name,
+        title: c.course_title || c.title || ""
+      }))
+    );
+    setShowAddCourses(false);
+  };
+
   // Use email prefix as username
   let username = "Student";
   try {
