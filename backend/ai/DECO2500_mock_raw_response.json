@@ -1,0 +1,228 @@
+{
+  "questions": [
+    {
+      "question_text": "What is the main difference between providing feedback through written text or audio, such as written feedback or think aloud feedback?",
+      "topic": "Human-Computer Interaction",
+      "question_type": "short_answer",
+      "sample_answer": "Analyzing text or audio data can provide insight into more complex phenomena that cannot be easily measured through other means."
+    },
+    {
+      "question_text": "What model does Cognitive Load Theory build on?",
+      "topic": "Cognitive Psychology",
+      "question_type": "calculation",
+      "correct_answer": "The Information Processing Model"
+    },
+    {
+      "question_text": "A. Model Human Processor",
+      "topic": "Human Factors",
+      "question_type": "multiple_choice",
+      "options": ["A) Model Human Processor", "B) Information Processing Model", "C) Distributed Cognition Model"],
+      "correct_answer": "B) Information Processing Model"
+    },
+    {
+      "question_text": "Which law or theory can operating-system designers take advantage of that relates to movement through a graphical user interface in relation to an infinite target?",
+      "topic": "Human Factors",
+      "question_type": "calculation",
+      "correct_answer": "Fitts' Law"
+    },
+    {
+      "question_text": "What methods can be used to measure perceived usability of a system?",
+      "topic": "Human Factors",
+      "question_type": "short_answer",
+      "sample_answer": "Methods such as System Usability Scale (SUS), Task Assessment Technique (TAT), and Learning Effect (LE)"
+    },
+    {
+      "question_text": "A. Interaction Paradigms",
+      "topic": "Human-Computer Interaction",
+      "question_type": "multiple_choice",
+      "options": ["A) Interaction Paradigms", "B) Interaction Modalities", "C) Design Guidelines", "D) Embodied Inter vals"],
+      "correct_answer": "B) Interaction Modalities"
+    },
+    {
+      "question_text": "Which representation of a prototype best describes a sketch of a user interface on paper?",
+      "topic": "Human Factors",
+      "question_type": "multiple_choice",
+      "options": ["A) Ordinary prototype", "B) On-line prototype", "C) Off-line prototype", "D) Open prototype"],
+      "correct_answer": "D) Open prototype"
+    },
+    {
+      "question_text": "In Hierarchical Task Analysis, what type of plan best describes the scenario where a user is required to upload 5 files separately onto a webpage before submitting and completing the task?",
+      "topic": "User Experience",
+      "question_type": "multiple_choice",
+      "options": ["A) Optional task", "B) Cycle", "C) Time-sharing"],
+      "correct_answer": "B) Cycle"
+    },
+    {
+      "question_text": "Which HCI concept best describes the use of a voice assistant to support conversing or issuing commands?",
+      "topic": "Human-Computer Interaction",
+      "question_type": "multiple_choice",
+      "options": ["A) Interaction Modality", "B) Interaction Paradigm", "C) Design Guideline", "D) Embodied Interaction"],
+      "correct_answer": "A) Interaction Modality"
+    },
+    {
+      "question_text": "What type of analysis is provided by textual or audio data, such as written feedback or think aloud feedback?",
+      "topic": "Human Factors",
+      "question_type": "short_answer",
+      "sample_answer": "Qualitative analysis can provide insight into more complex phenomena that cannot be easily measured through other means."
+    },
+    {
+      "question_text": "What principle relates to the way our brains see structure and patterns in incomplete images?",
+      "topic": "Cognitive Psychology",
+      "question_type": "calculation",
+      "correct_answer": "Gestalt's Theory"
+    },
+    {
+      "question_text": "Which of Schneiderman's Golden Rules does this screenshot violate?",
+      "topic": "Human Factors",
+      "question_type": "multiple_choice",
+      "options": ["A) Strive for consistency", "B) Enable frequent users to use shortcuts", "C) Support internal locus of control", "D) Offer informative feedback"],
+      "correct_answer": "D) Offer informative feedback"
+    },
+    {
+      "question_text": "What type of analysis can be used by calculating means, medians, and standard deviations to gain an insight into users' performance?",
+      "topic": "Human Factors",
+      "question_type": "short_answer",
+      "sample_answer": "Quantitative analysis"
+    },
+    {
+      "question_text": "Which model is a user’s internal representation of how a system works and allows the user to reason about how the system works and how to troubleshoot it?",
+      "topic": "Human Factors",
+      "question_type": "multiple_choice",
+      "options": ["A) Morph Model", "B) Modality Model", "C) Mental Model", "D) Modern Model"],
+      "correct_answer": "C) Mental Model"
+    },
+    {
+      "question_text": "Which model is an abstraction that tells people how a system can be used and how to interact with it?",
+      "topic": "Human Factors",
+      "question_type": "multiple_choice",
+      "options": ["A) Conceptual Model", "B) Core Model", "C) Counting Model", "D) Conversation Model"],
+      "correct_answer": "A) Conceptual Model"
+    },
+    {
+      "question_text": "What is another term for digital amnesia?",
+      "topic": "Cognitive Psychology",
+      "question_type": "short_answer",
+      "sample_answer": " beauardless"
+    }
+  ],
+  "mock_exam": [
+    {
+      "question_text": "What is the main difference between providing feedback through written text or audio, such as written feedback or think aloud feedback?",
+      "topic": "Human-Computer Interaction",
+      "question_type": "multiple_choice",
+      "options": ["A) Analyzing written text is fast", "B) Providing audio feedback is reliable", "C) Written feedback can be analyzed further", "D) Audio feedback is more effective"],
+      "correct_answer": "C) Written feedback can be analyzed further"
+    },
+    {
+      "question_text": "A researcher in a school has undertaken interviews as part of a contextual inquiry to find out about the impact that technology has had on teaching children science at primary school.",
+      "topic": "Human-Computer Interaction",
+      "question_type": "short_answer",
+      "sample_answer": "The impact that technology has had on teaching children science at primary school is complex and multifaceted, involving both positive and negative effects."
+    },
+    {
+      "question_text": "Which theory or principle is related to your decision to make this change?",
+      "topic": "Human Factors",
+      "question_type": "multiple_choice",
+      "options": ["A) Hick’s Law", "B) Fitts' Law", "C) Remove cognitive load", "D) The Law of Least Effort"],
+      "correct_answer": "B) Fitts' Law"
+    },
+    {
+      "question_text": "A human perceives the world by recognizing patterns, but the difficulty of recognizing these patterns exceeds the percepts that are actually received. The world as perceived by the human mind is called?",
+      "topic": "Cognitive Psychology",
+      "question_type": "short_answer",
+      "sample_answer": "the veritable world"
+    },
+    {
+      "question_text": "Cognitive Load Theory builds on which model?",
+      "topic": "Cognitive Psychology",
+      "question_type": "short_answer",
+      "sample_answer": "The Information Processing Model"
+    },
+    {
+      "question_text": "A number of principles can be drawn upon from cognitive science to increase the usability of software.",
+      "topic": "Human Factors",
+      "question_type": "multiple_choice",
+      "options": ["A) Hick’s Law", "B) Design Patterns", "C) Fitts’ Law", "D) Heuristics Analysis"],
+      "correct_answer": "D) Heuristics Analysis"
+    },
+    {
+      "question_text": "What is the principle that can operating-system designers take advantage of that relates to movement through a graphical user interface in relation to an infinite target?",
+      "topic": "Human Factors",
+      "question_type": "short_answer",
+      "sample_answer": "Fitts' Law"
+    },
+    {
+      "question_text": "Design Patterns can be used to improve usability by?",
+      "topic": "Human Factors",
+      "question_type": "multiple_choice",
+      "options": ["A) Reduce user experience", "B) Increase visual noise", "C) Improve user efficiency", "D) Decrease user satisfaction"],
+      "correct_answer": "C) Improve user efficiency"
+    },
+    {
+      "question_text": "A designer needs to analyse a task that involves submitting multiple documents.",
+      "topic": "User Experience",
+      "question_type": "multiple_choice",
+      "options": ["A) FIRST Curve", "B) HIM", "C) Catholics Cycle", "D) AND Tool"],
+      "correct_answer": "B) HIM"
+    },
+    {
+      "question_text": "A voice assistant is an example of?",
+      "topic": "Human-Computer Interaction",
+      "question_type": "multiple_choice",
+      "options": ["A) Interaction Modality", "B) Interaction Paradigm", "C) Design Guideline", "D) Real-world Manipuation"],
+      "correct_answer": "A) Interaction Modality"
+    },
+    {
+      "question_text": "A micro interaction can be an example of?",
+      "topic": "Human-Computer Interaction",
+      "question_type": "multiple_choice",
+      "options": ["A) Meta Interaction", "B) Microinteraction", "C) Meta-app", "D) Meta-component"],
+      "correct_answer": "B) Microinteraction"
+    },
+    {
+      "question_text": "Qualitative analysis can be provided by textual or audio data.",
+      "topic": "Human Factors",
+      "question_type": "short_answer",
+      "sample_answer": "Qualitative analysis can provide insight into more complex phenomena that cannot be easily measured through other means."
+    },
+    {
+      "question_text": "What conception of perception, which states that people perceive the world by recognizing patterns, but the difficulty of recognizing these patterns exceeds the percepts that are actually received?",
+      "topic": "Cognitive Psychology",
+      "question_type": "short_answer",
+      "sample_answer": "Structural Inconsistencies"
+    },
+    {
+      "question_text": "Which model best describes the use of a voice assistant to support conversing or issuing commands?",
+      "topic": "Human-Computer Interaction",
+      "question_type": "multiple_choice",
+      "options": ["A) Interaction Modal", "B) Interaction Parallelism", "C) Design Typography", "D) Interaction stdin"],
+      "correct_answer": "A) Interaction Modal"
+    },
+    {
+      "question_text": "Quantitative analysis can be used to measure users’ performance.",
+      "topic": "Human Factors",
+      "question_type": "multiple_choice",
+      "options": ["A) Quantitative Method", "B) STEP", "C) Micro- Participatory/Open Interaction", "D) ET eof Vertical Art"]));
+    },
+    {
+      "question_text": "Which model is a user’s mental representation of how a system works and allows the user to reason about how the system works and how to troubleshoot it?",
+      "topic": "Human Factors",
+      "question_type": "multiple_choice",
+      "options": ["A) Morph Model", "B) Modality Model", "C) Mental Model", "D) Modern Model"],
+      "correct_answer": "C) Mental Model"
+    },
+    {
+      "question_text": "What concept most accurately describes a user’s control over a cybernetic system?",
+      "topic": "Human Factors",
+      "question_type": "multiple_choice",
+      "options": ["A) Meta Interaction", "B) Microinteraction", "C) Command Interpretation", "D) concept unemployment coefficient"],
+      "correct_answer": "D) concept unemployment coefficient"]
+    },
+    {
+      "question_text": "A scientist uses a moderating role to facilitate dialogue between educators and policymakers.",
+      "topic": "Human Factors",
+      "question_type": "short_answer",
+      "sample_answer": "The scientist's role is to facilitate dialogue and provide insight into the impact of technology on teaching children science at primary school."
+    }
+  ]
+}
