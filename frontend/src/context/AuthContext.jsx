@@ -6,7 +6,7 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // true until initial check
   const [error, setError] = useState("");
 
   // On mount, check for token and set authenticated state
@@ -31,6 +31,7 @@ export function AuthProvider({ children }) {
       setIsAuthenticated(false);
       setUser(null);
     }
+    setLoading(false); // done with initial check
   }, []);
 
   const login = async (email, password) => {
