@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
 
 import os
 import subprocess
@@ -25,7 +27,7 @@ async def get_papers(course_code: str):
     try:
         result = subprocess.run(
             [
-                "python3",
+                sys.executable,
                 os.path.join(PROJECT_ROOT, "ai/extractText.py"),
                 course_code,
                 "download",

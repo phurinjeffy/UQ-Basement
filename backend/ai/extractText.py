@@ -16,6 +16,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from PyPDF2 import PdfReader
 
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+
 # Always use project root for past_papers dir (not used for downloads anymore)
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
