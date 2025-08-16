@@ -23,7 +23,7 @@ def get_supabase_headers():
         "Prefer": "return=representation"
     }
 
-router = APIRouter(prefix="/quiz", tags=["quiz"])
+router = APIRouter()
 
 # POST /quiz: Create a new quiz
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=APIResponse)

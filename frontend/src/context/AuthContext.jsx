@@ -14,16 +14,22 @@ export function AuthProvider({ children }) {
     const token = localStorage.getItem("token");
     if (token) {
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
+        const payload = JSON.parse(atob(token.split(".")[1]));
+
         // Optionally check token expiration
         if (payload.exp && Date.now() / 1000 < payload.exp) {
           setIsAuthenticated(true);
-          setUser({ id: payload.user_id, name: payload.name });
+          setUser({
+            id: payload.user_id,
+            name: payload.name,
+            email: payload.email,
+          });
         } else {
           setIsAuthenticated(false);
           setUser(null);
         }
-      } catch {
+      } catch (e) {
+        console.log("[AuthContext] Error parsing JWT:", e);
         setIsAuthenticated(false);
         setUser(null);
       }
@@ -44,10 +50,14 @@ export function AuthProvider({ children }) {
         localStorage.setItem("token", res.token);
         // Set authenticated state
         try {
-          const payload = JSON.parse(atob(res.token.split('.')[1]));
+          const payload = JSON.parse(atob(res.token.split(".")[1]));
           if (payload.exp && Date.now() / 1000 < payload.exp) {
             setIsAuthenticated(true);
-            setUser({ id: payload.user_id, name: payload.name });
+            setUser({
+              id: payload.user_id,
+              name: payload.name,
+              email: payload.email,
+            });
           }
         } catch {}
       }
@@ -70,10 +80,14 @@ export function AuthProvider({ children }) {
         localStorage.setItem("token", res.token);
         // Set authenticated state
         try {
-          const payload = JSON.parse(atob(res.token.split('.')[1]));
+          const payload = JSON.parse(atob(res.token.split(".")[1]));
           if (payload.exp && Date.now() / 1000 < payload.exp) {
             setIsAuthenticated(true);
-            setUser({ id: payload.user_id, name: payload.name });
+            setUser({
+              id: payload.user_id,
+              name: payload.name,
+              email: payload.email,
+            });
           }
         } catch {}
       }

@@ -27,7 +27,7 @@ def get_supabase_headers():
         "Prefer": "return=representation"
     }
 
-router = APIRouter(prefix="/questions", tags=["questions"])
+router = APIRouter()
 
 # Helper function to parse multiple choice options
 def parse_choices(options: List[str], correct_answer: str = None) -> List[ChoiceCreate]:
@@ -120,10 +120,6 @@ async def bulk_import_questions(import_data: BulkImportRequest):
         # Process regular questions
         if import_data.questions:
             all_questions.extend(import_data.questions)
-        
-        # Process mock exam questions
-        if import_data.mock_exam:
-            all_questions.extend(import_data.mock_exam)
         
         created_questions = []
         errors = []

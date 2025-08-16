@@ -7,8 +7,9 @@ from models import (
     EnrollmentCreate, EnrollmentResponse,
     UQCourse
 )
-from config import get_supabase_headers, SUPABASE_REST_URL, logger
+
 from uuid import UUID
+from config import get_supabase_headers, SUPABASE_REST_URL, logger
 
 router = APIRouter()
 
@@ -98,6 +99,38 @@ async def get_courses(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve courses: {str(e)}"
+        )
+    
+@router.get("/courses/search-by-code")
+async def search_course_by_code(code: str = Query(..., description="Course code, e.g. DECO2500")):
+    """Search for a course by code and return its id."""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{SUPABASE_REST_URL}/courses",
+                headers=get_supabase_headers(),
+                params={
+                    "name": f"eq.{code}",
+                    "select": "id,name"
+                }
+            )
+            if response.status_code != 200:
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"Supabase API error: {response.text}"
+                )
+            courses = response.json()
+            if not courses:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Course not found"
+                )
+            return {"id": courses[0]["id"], "name": courses[0]["name"]}
+    except Exception as e:
+        logger.error(f"Error searching course by code: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to search course: {str(e)}"
         )
 
 @router.get("/courses/{course_id}")

@@ -1,7 +1,15 @@
 import { useRef } from "react";
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { getPapers, listPastPapers, getPastPaperPdfUrl, fetchEnrollmentDetails } from "../api";
+import {
+  getPapers,
+  listPastPapers,
+  getPastPaperPdfUrl,
+  fetchEnrollmentDetails,
+  createQuizAndUploadQuestions,
+  fetchCourseByCode,
+  generateQuestionsJson,
+} from "../api";
 
 const getPaperMeta = (filename) => {
   // Example: Semester_One_Final_Examinations_2021_DECO2500.pdf
@@ -82,21 +90,23 @@ const MockExam = () => {
   const [generating, setGenerating] = useState(false);
   const [mockError, setMockError] = useState("");
   const [enrollmentDetails, setEnrollmentDetails] = useState(null);
-  const timeLeft = useCountdown(enrollmentDetails?.exam_date, enrollmentDetails?.exam_time) || null;
+  const timeLeft =
+    useCountdown(enrollmentDetails?.exam_date, enrollmentDetails?.exam_time) ||
+    null;
 
   let userId = "";
-      try {
-        // Extract userId from JWT token in localStorage
-        const token = localStorage.getItem("token");
-        if (token) {
-          // Decode JWT (base64 decode payload)
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          userId = payload.user_id;
-        }
-        if (!userId) return;
-      } catch (error) {
-        console.error("Failed to extract user ID from token:", error);
-      }
+  try {
+    // Extract userId from JWT token in localStorage
+    const token = localStorage.getItem("token");
+    if (token) {
+      // Decode JWT (base64 decode payload)
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      userId = payload.user_id;
+    }
+    if (!userId) return;
+  } catch (error) {
+    console.error("Failed to extract user ID from token:", error);
+  }
 
   // Prevent background scroll when any modal is open
   useEffect(() => {
@@ -245,31 +255,60 @@ const MockExam = () => {
                 </div>
               ))}
             </div>
-          ) : timeLeft && (
-            <div className="grid grid-flow-col gap-5 text-center auto-cols-max">
-            <div className="flex flex-col p-2 bg-neutral rounded-box text-neutral-content">
-              <span className="countdown font-mono text-5xl">
-                <span style={{"--value":timeLeft.days} /* as React.CSSProperties */ } aria-live="polite">{timeLeft.days}</span>
-              </span>
-              days
-            </div>
-            {(timeLeft.hours != null && timeLeft.minutes != null) && (
-              <>
-            <div className="flex flex-col p-2 bg-neutral rounded-box text-neutral-content">
-              <span className="countdown font-mono text-5xl">
-                <span style={{"--value":timeLeft.hours} /* as React.CSSProperties */ } aria-live="polite">{timeLeft.hours}</span>
-              </span>
-              hours
-            </div>
-            <div className="flex flex-col p-2 bg-neutral rounded-box text-neutral-content">
-              <span className="countdown font-mono text-5xl">
-                <span style={{"--value":timeLeft.minutes} /* as React.CSSProperties */ } aria-live="polite">{timeLeft.minutes}</span>
-              </span>
-              min
-            </div>
-            </>
-            )}
-          </div>
+          ) : (
+            timeLeft && (
+              <div className="grid grid-flow-col gap-5 text-center auto-cols-max">
+                <div className="flex flex-col p-2 bg-neutral rounded-box text-neutral-content">
+                  <span className="countdown font-mono text-5xl">
+                    <span
+                      style={
+                        {
+                          "--value": timeLeft.days,
+                        } /* as React.CSSProperties */
+                      }
+                      aria-live="polite"
+                    >
+                      {timeLeft.days}
+                    </span>
+                  </span>
+                  days
+                </div>
+                {timeLeft.hours != null && timeLeft.minutes != null && (
+                  <>
+                    <div className="flex flex-col p-2 bg-neutral rounded-box text-neutral-content">
+                      <span className="countdown font-mono text-5xl">
+                        <span
+                          style={
+                            {
+                              "--value": timeLeft.hours,
+                            } /* as React.CSSProperties */
+                          }
+                          aria-live="polite"
+                        >
+                          {timeLeft.hours}
+                        </span>
+                      </span>
+                      hours
+                    </div>
+                    <div className="flex flex-col p-2 bg-neutral rounded-box text-neutral-content">
+                      <span className="countdown font-mono text-5xl">
+                        <span
+                          style={
+                            {
+                              "--value": timeLeft.minutes,
+                            } /* as React.CSSProperties */
+                          }
+                          aria-live="polite"
+                        >
+                          {timeLeft.minutes}
+                        </span>
+                      </span>
+                      min
+                    </div>
+                  </>
+                )}
+              </div>
+            )
           )}
         </div>
 
@@ -337,7 +376,10 @@ const MockExam = () => {
                 ) : noPapers ? (
                   <span>No Past Papers</span>
                 ) : (
-                  <div className="tooltip tooltip-left" data-tip="You may be redirected to UQ Authenticate">
+                  <div
+                    className="tooltip tooltip-left"
+                    data-tip="You may be redirected to UQ Authenticate"
+                  >
                     <span>Get Past Papers</span>
                   </div>
                 )}
@@ -544,29 +586,59 @@ const MockExam = () => {
               <h2 className="text-lg font-semibold">Mock Exams</h2>
                 <button
                 className="btn btn-secondary"
-                onClick={() => {
+                onClick={async () => {
                   setGenerating(true);
                   setMockError("");
-                  setTimeout(() => {
-                    // Create a small sample of questions for the mock exam (mix of text and MCQ)
-                    const sampleQuestions = [
-                      { id: 1, type: 'text', text: 'Explain the main purpose of the module covered in Week 1.' },
-                      { id: 2, type: 'mcq', text: 'Which data structure gives O(1) average lookups?', choices: ['Array', 'Hash Table', 'Linked List', 'Binary Tree'] },
-                      { id: 3, type: 'text', text: 'Write a short algorithm to perform Y and explain its complexity.' },
-                      { id: 4, type: 'mcq', text: 'Which sorting algorithm is stable?', choices: ['QuickSort', 'MergeSort', 'HeapSort', 'SelectionSort'] },
-                      { id: 5, type: 'text', text: 'Summarise the key limitations of approach A.' },
-                    ];
-                    setMockExams([
-                      ...(mockExams || []),
-                      {
-                        name: `Mock Exam ${mockExams.length + 1}`,
-                        date: new Date().toLocaleString(),
-                        questions: sampleQuestions,
-                        submitted: false,
-                      },
-                    ]);
-                    setGenerating(false);
-                  }, 800);
+                  try {
+                    // Fetch course details to get UUID by code
+                    const courseDetails = await fetchCourseByCode(courseId);
+                    const courseUUID = courseDetails.id;
+                      // Step 1: Generate questions JSON via backend API
+                      const genJsonResp = await generateQuestionsJson(courseId);
+                      if (!genJsonResp.success) {
+                        setMockError(
+                          genJsonResp.error ||
+                          genJsonResp.stderr ||
+                          "Failed to generate questions JSON."
+                        );
+                        setGenerating(false);
+                        return;
+                      }
+                      // Step 2: Upload questions to Supabase (create quiz)
+                      const quizResp = await createQuizAndUploadQuestions({
+                        course_code: courseId,
+                        title: `Mock Exam for ${courseId}`,
+                        course_id: courseUUID,
+                        description: "Generated mock exam",
+                        topic: "test",
+                        time_limit: 60,
+                      });
+                      console.log("Quiz API response:", quizResp);
+                      if (quizResp && quizResp.quiz) {
+                        setMockExams([...(mockExams || []), quizResp.quiz]);
+                      } else if (
+                        quizResp &&
+                        quizResp.success === false &&
+                        quizResp.error
+                      ) {
+                        setMockError(quizResp.error);
+                      } else {
+                        setMockError(
+                          "Quiz was not created. Please try again or check backend logs."
+                        );
+                      }
+                  } catch (err) {
+                    setMockError(
+                      err.response?.data?.detail ||
+                        err.message ||
+                        "Failed to generate quiz. Try again."
+                    );
+                    console.error(
+                      "Quiz creation error:",
+                      err.response?.data || err
+                    );
+                  }
+                  setGenerating(false);
                 }}
                 disabled={generating}
               >

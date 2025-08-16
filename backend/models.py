@@ -116,8 +116,8 @@ class ChoiceCreate(BaseModel):
 
 class ChoiceResponse(BaseModel):
     """Model for choice response data"""
-    id: int
-    question_id: int
+    id: UUID  # Changed from int to UUID
+    question_id: UUID  # Changed from int to UUID
     choice_text: str
     choice_letter: Optional[str] = None
     is_correct: bool
@@ -137,7 +137,7 @@ class QuestionCreate(BaseModel):
     )
     sample_answer: Optional[str] = Field(None, description="Sample answer or explanation")
     correct_answer: Optional[str] = Field(None, description="Correct answer for multiple choice")
-    quiz_id: Optional[UUID] = Field(None, description="Associated quiz ID")  # ADD THIS LINE
+    quiz_id: Optional[UUID] = Field(None, description="Associated quiz ID")
     choices: Optional[List[ChoiceCreate]] = Field([], description="List of choices for multiple choice questions")
 
 class QuestionUpdate(BaseModel):
@@ -151,17 +151,17 @@ class QuestionUpdate(BaseModel):
     )
     sample_answer: Optional[str] = Field(None, description="Sample answer or explanation")
     correct_answer: Optional[str] = Field(None, description="Correct answer for multiple choice")
-    quiz_id: Optional[UUID] = Field(None, description="Associated quiz ID")  # ADD THIS LINE
+    quiz_id: Optional[UUID] = Field(None, description="Associated quiz ID")
 
 class QuestionResponse(BaseModel):
     """Model for question response data"""
-    id: int
+    id: UUID  # Changed from int to UUID
     question_text: str
     topic: str
     question_type: str
     sample_answer: Optional[str] = None
     correct_answer: Optional[str] = None
-    quiz_id: Optional[UUID] = None  # ADD THIS LINE
+    quiz_id: Optional[UUID] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     choices: Optional[List[ChoiceResponse]] = []
@@ -171,13 +171,13 @@ class QuestionResponse(BaseModel):
 
 class QuestionWithChoices(BaseModel):
     """Extended question model with choices included"""
-    id: int
+    id: UUID  # Changed from int to UUID
     question_text: str
     topic: str
     question_type: str
     sample_answer: Optional[str] = None
     correct_answer: Optional[str] = None
-    quiz_id: Optional[UUID] = None  # ADD THIS LINE
+    quiz_id: Optional[UUID] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     choices: List[Dict[str, Any]] = []
@@ -195,8 +195,7 @@ class BulkQuestionData(BaseModel):
 class BulkImportRequest(BaseModel):
     """Model for bulk importing questions from JSON"""
     questions: List[Dict[str, Any]] = Field([], description="List of question objects")
-    mock_exam: List[Dict[str, Any]] = Field([], description="List of mock exam question objects")
-    quiz_id: Optional[UUID] = Field(None, description="Optional quiz ID to assign to all imported questions")  # ADD THIS LINE
+    quiz_id: Optional[UUID] = Field(None, description="Optional quiz ID to assign to all imported questions")
 
 class BulkImportResponse(BaseModel):
     """Model for bulk import operation response"""
@@ -217,7 +216,7 @@ class QuizCreate(BaseModel):
 
 class QuizResponse(BaseModel):
     """Model for quiz response data"""
-    id: UUID  # Changed from int to UUID
+    id: UUID
     title: str
     description: Optional[str] = None
     course_id: UUID = Field(..., description="Associated course ID")
@@ -232,21 +231,21 @@ class QuizResponse(BaseModel):
 
 class QuizAttemptCreate(BaseModel):
     """Model for creating a quiz attempt"""
-    quiz_id: UUID = Field(..., description="ID of the quiz being attempted")  # Changed from int to UUID
+    quiz_id: UUID = Field(..., description="ID of the quiz being attempted")
     user_id: UUID = Field(..., description="ID of the user taking the quiz")
-    answers: Dict[int, str] = Field({}, description="Dictionary of question_id: answer")
+    answers: Dict[UUID, str] = Field({}, description="Dictionary of question_id: answer")  # Changed from Dict[int, str] to Dict[UUID, str]
 
 class QuizAttemptResponse(BaseModel):
     """Model for quiz attempt response"""
     id: int
-    quiz_id: UUID  # Changed from int to UUID
+    quiz_id: UUID
     user_id: UUID
     score: Optional[float] = None
     max_score: Optional[float] = None
     percentage: Optional[float] = None
     completed_at: Optional[datetime] = None
     time_taken: Optional[int] = None  # in seconds
-    answers: Dict[int, str] = {}
+    answers: Dict[UUID, str] = {}  # Changed from Dict[int, str] to Dict[UUID, str]
     
     class Config:
         from_attributes = True

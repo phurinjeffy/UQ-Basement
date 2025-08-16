@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import boto3
 from botocore.client import Config
 from io import BytesIO
+
 load_dotenv()
 
 
@@ -17,13 +18,28 @@ S3_ACCESS_KEY_ID = os.environ.get("S3_ACCESS_KEY_ID")
 S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY")
 S3_BUCKET = "pdfs"
 
-COURSE_CODE = "DECO2500" 
+
+def get_course_code():
+    import sys
+
+    # Priority: command-line arg > env var > error
+    if len(sys.argv) > 1:
+        return sys.argv[1]
+    code = os.getenv("COURSE_CODE")
+    if code:
+        return code
+    raise ValueError(
+        "COURSE_CODE must be provided as an argument or environment variable."
+    )
+
+
 OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
-MODEL_NAME = "meta-llama/llama-3.2-3b-instruct:free"
+MODEL_NAME = "qwen/qwen3-coder:free"
 
 if not OPENROUTER_KEY:
     raise ValueError("OPENROUTER_KEY environment variable not set.")
+
 
 # --------------------------
 # HELPERS
@@ -54,6 +70,7 @@ def read_past_paper_files_from_s3(course_code):
             papers.append(text)
     return papers
 
+
 def preprocess_exam_text(text):
     lines = text.splitlines()
     questions = []
@@ -61,13 +78,18 @@ def preprocess_exam_text(text):
     for line in lines:
         if line.strip().startswith("Question") or line.strip().startswith("PART"):
             continue
-        if line.strip() and not line.strip().startswith("Semester") and not line.strip().startswith("Examination"):
+        if (
+            line.strip()
+            and not line.strip().startswith("Semester")
+            and not line.strip().startswith("Examination")
+        ):
             current_question.append(line)
         if line.strip().endswith("?") or line.strip().endswith("."):
             if current_question:
                 questions.append("\n".join(current_question))
                 current_question = []
     return questions
+
 
 def split_into_questions(text):
     questions = []
@@ -84,69 +106,71 @@ def split_into_questions(text):
         questions.append("\n".join(current_question))
     return questions
 
+
 def openrouter_chat(prompt):
     payload = {
         "model": MODEL_NAME,
         "messages": [
             {"role": "system", "content": "You are an academic assistant."},
-            {"role": "user", "content": prompt}
-        ]
+            {"role": "user", "content": prompt},
+        ],
     }
     headers = {
         "Authorization": f"Bearer {OPENROUTER_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
-    res = requests.post(f"{OPENROUTER_BASE}/chat/completions", json=payload, headers=headers)
+    res = requests.post(
+        f"{OPENROUTER_BASE}/chat/completions", json=payload, headers=headers
+    )
     res.raise_for_status()
     return res.json()["choices"][0]["message"]["content"]
+
 
 # --------------------------
 # MAIN
 # --------------------------
 if __name__ == "__main__":
+    course_code = get_course_code()
     print("Reading past papers from S3...")
-    papers = read_past_paper_files_from_s3(COURSE_CODE)
-    
+    papers = read_past_paper_files_from_s3(course_code)
+
     if not papers:
-        raise FileNotFoundError(f"No PDF files found in S3 for course {COURSE_CODE}")
-    
+        raise FileNotFoundError(f"No PDF files found in S3 for course {course_code}")
+
     first_paper = papers[0]
     questions = preprocess_exam_text(first_paper)
-    
-    # Build prompt for analysis + mock generation
+
+    # Build prompt for only questions
     prompt = (
-    "You are an academic assistant. Your job has two parts:\n"
-    "1. For each original question, create an entry with:\n"
-    "   - 'question_text': the actual question being asked, excluding any options.\n"
-    "   - 'topic': main subject area of the question.\n"
-    "   - 'question_type': 'multiple_choice', 'short_answer', 'essay', or 'calculation'.\n"
-    "   - For multiple choice questions, include an 'options' field with the possible answers, formatted as 'A) option1', 'B) option2', etc.\n"
-    "2. Generate a mock exam with the same number of questions, topics, and question types as the original exam.\n"
-    "   - For multiple choice questions, format options as 'A) option1', 'B) option2', etc.\n"
-    "   - Include 'correct_answer' for multiple choice questions and 'sample_answer' for short answer questions.\n"
-    "   - Maintain similar style and difficulty.\n"
-    "   - Include the same number of questions as the original exam.\n"
-    "IMPORTANT: Output STRICTLY valid JSON, nothing outside the JSON object.\n"
-    "JSON structure:\n"
-    "{\n"
-    '  "questions": [\n'
-    '    {"question_text": "What is the main difference between...", "topic": "...", "question_type": "multiple_choice", '
-    '"options": ["A) ...", "B) ...", "C) ...", "D) ..."]},\n'
-    "    ...\n"
-    "  ],\n"
-    '  "mock_exam": [\n'
-    '    {"question_text": "What is the main difference between...", "topic": "...", "question_type": "multiple_choice", '
-    '"options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "..."},\n'
-    '    {"question_text": "...", "topic": "...", "question_type": "short_answer", '
-    '"sample_answer": "..."},\n'
-    "    ...\n"
-    "  ]\n"
-    "}\n\n"
-    "Here are the original questions:\n"
-)
+        "You are an academic assistant. For each original question, create an entry with:\n"
+        '   - "question_text": the actual question being asked, excluding any options.\n'
+        '   - "topic": main subject area of the question.\n'
+        '   - "question_type": one of "multiple_choice", "short_answer", "essay", or "calculation".\n'
+        '   - For "multiple_choice" questions, include an "options" field (array of strings, e.g., ["A) ...", "B) ...", ...]) and a "correct_answer" field (string, e.g., "A) ...").\n'
+        '   - For "short_answer", "essay", or "calculation" questions, include a "sample_answer" field (string).\n'
+        "\n"
+        "IMPORTANT:\n"
+        "- Do NOT include any duplicate keys in any object. Each object must have only one of each key.\n"
+        "- Output ONLY valid JSON. Do NOT include any text, comments, or code block markers (such as ```json).\n"
+        "- Use double quotes for all keys and string values.\n"
+        "- Do NOT include trailing commas.\n"
+        "- Do NOT include any explanations or text outside the JSON object.\n"
+        "- Do NOT use backslashes (\\) except as part of a valid escape sequence inside a string.\n"
+        "- Do NOT use any punctuation outside of double-quoted strings.\n"
+        "- If you cannot answer, output an empty JSON object: {}.\n"
+        "\n"
+        "JSON structure:\n"
+        "{\n"
+        '  "questions": [\n'
+        '    {"question_text": "...", "topic": "...", "question_type": "multiple_choice", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "..."},\n'
+        '    {"question_text": "...", "topic": "...", "question_type": "short_answer", "sample_answer": "..."},\n'
+        "    ...\n"
+        "  ]\n"
+        "}\n\n"
+        "Here are the original questions:\n"
+    )
     for idx, q in enumerate(questions, 1):
         prompt += f"\n--- QUESTION {idx} START ---\n{q}\n--- QUESTION {idx} END ---\n"
-
 
     print(f"Sending API request for {len(questions)} questions...")
     response = openrouter_chat(prompt)
@@ -154,26 +178,55 @@ if __name__ == "__main__":
     print("AI response:\n")
     print(response)
 
-    # Try to parse JSON
-    start = response.find("{")
-    end = response.rfind("}") + 1
-    json_str = response[start:end]
-    # Attempt to clean up common issues
+    # Try to parse JSON and auto-fix common schema issues
+    import re
+
+    def fix_question(q):
+        qt = q.get("question_type")
+        if qt == "multiple_choice":
+            return {
+                "question_text": q.get("question_text"),
+                "topic": q.get("topic"),
+                "question_type": "multiple_choice",
+                "options": q.get("options", []),
+                "correct_answer": q.get("correct_answer", ""),
+            }
+        elif qt in ("short_answer", "essay", "calculation"):
+            return {
+                "question_text": q.get("question_text"),
+                "topic": q.get("topic"),
+                "question_type": qt,
+                "sample_answer": q.get("sample_answer", ""),
+            }
+        else:
+            return None
+
+    cleaned = response.replace("```json", "").replace("```", "").strip()
+    match = re.search(r"\{[\s\S]*\}", cleaned)
+    json_str = match.group(0) if match else cleaned
     json_str = json_str.replace("'", '"')
-    json_str = json_str.replace('“', '"').replace('”', '"').replace('‘', '"').replace('’', '"')
-    json_str = json_str.replace(",]", "]")
-    json_str = json_str.replace(",\n]", "\n]")
+    json_str = (
+        json_str.replace("“", '"').replace("”", '"').replace("‘", '"').replace("’", '"')
+    )
+    json_str = re.sub(r",\s*([}\]])", r"\1", json_str)  # Remove trailing commas
+
+    filename = f"{course_code}_mock.json"
+
     try:
         result = json.loads(json_str)
-        output_file = f"{COURSE_CODE}_past_paper_analysis_with_mock.json"
-        with open(output_file, "w", encoding="utf-8") as f:
+        # Auto-fix questions array only
+        if "questions" in result:
+            fixed = []
+            for q in result["questions"]:
+                fq = fix_question(q)
+                if fq and fq["question_text"]:
+                    fixed.append(fq)
+            result["questions"] = fixed
+        with open(filename, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=2)
-        print("Analysis + mock exam saved to:", output_file)
+        print("Analysis + mock exam saved to:", filename)
     except Exception as e:
         print("Failed to parse JSON:", e)
-        # Remove code block markers if present
-        cleaned_response = response.replace('```json', '').replace('```', '').strip()
-        raw_file = f"{COURSE_CODE}_mock_raw_response.json"
-        with open(raw_file, "w", encoding="utf-8") as f:
-            f.write(cleaned_response)
-        print(f"Raw AI response saved to: {raw_file}")
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(cleaned)
+        print(f"Raw AI response saved to: {filename}")
