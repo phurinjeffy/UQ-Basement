@@ -6,6 +6,8 @@ import { updateEnrollments, getEnrollments, fetchCourseById } from "../api.js";
 const Dashboard = () => {
   const [showAddCourses, setShowAddCourses] = useState(false);
   const [courses, setCourses] = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(true); // New state for loading
+
   // Fetch enrollments on mount
   useEffect(() => {
     async function fetchEnrollmentsAndDetails() {
@@ -13,22 +15,26 @@ const Dashboard = () => {
       try {
         const enrollments = await getEnrollments(userId);
         // Fetch course details for each enrolled course
-        const merged = await Promise.all(enrollments.map(async (e) => {
-          let courseDetail = null;
-          try {
-            courseDetail = await fetchCourseById(e.course_id);
-          } catch {}
-          return {
-            id: e.course_id,
-            name: courseDetail?.course?.name,
-            title: courseDetail?.course?.course_title,
-            examDate: e.exam_date || "",
-            examTime: e.exam_time || ""
-          };
-        }));
+        const merged = await Promise.all(
+          enrollments.map(async (e) => {
+            let courseDetail = null;
+            try {
+              courseDetail = await fetchCourseById(e.course_id);
+            } catch {}
+            return {
+              id: e.course_id,
+              name: courseDetail?.course?.name,
+              title: courseDetail?.course?.course_title,
+              examDate: e.exam_date || "",
+              examTime: e.exam_time || "",
+            };
+          })
+        );
         setCourses(merged);
       } catch (err) {
         // Optionally handle error
+      } finally {
+        setLoadingCourses(false); // Set loading to false after fetch
       }
     }
     fetchEnrollmentsAndDetails();
@@ -42,7 +48,7 @@ const Dashboard = () => {
         name: c.name,
         title: c.course_title || c.title || "",
         examDate: c.examDate || "",
-        examTime: c.examTime || ""
+        examTime: c.examTime || "",
       }))
     );
     setShowAddCourses(false);
@@ -177,7 +183,7 @@ const Dashboard = () => {
                 </p>
               </div>
               {/* Quick Actions */}
-        {/* <div className="flex flex-wrap gap-3">
+              {/* <div className="flex flex-wrap gap-3">
           <button className="btn btn-primary">Start Mock Exam</button>
           <button className="btn btn-outline">Review Past Papers</button>
         </div> */}
@@ -189,96 +195,137 @@ const Dashboard = () => {
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                   Your Courses
                 </h3>
-                <button className="btn btn-sm btn-outline flex items-center gap-2" onClick={() => setShowAddCourses(true)}>
+                <button
+                  className="btn btn-sm btn-outline flex items-center gap-2"
+                  onClick={() => setShowAddCourses(true)}
+                >
                   Manage
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {showAddCourses && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-                <div className="relative bg-base-100 rounded-xl shadow-lg w-full max-w-5xl mx-auto p-0">
-                  <button
-                    className="absolute top-2 right-2 btn btn-sm btn-circle btn-ghost"
-                    onClick={() => setShowAddCourses(false)}
-                    aria-label="Close"
-                  >
-                    ✕
-                  </button>
-                  <div className="p-4">
-                    <AddCourses
-                      onConfirm={handleConfirmCourses}
-                      initialCourses={courses.map(c => ({
-                        id: c.id,
-                        name: c.name,
-                        course_title: c.title,
-                        examDate: c.examDate,
-                        examTime: c.examTime
-                      }))}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-                {courses.map((course) => {
-                  let countdown = "";
-                  let badgeColor = "badge-info badge-outline";
-                  if (course.examDate) {
-                    const now = new Date();
-                    const exam = new Date(course.examDate);
-                    // Remove time portion for accurate day diff
-                    now.setHours(0,0,0,0);
-                    exam.setHours(0,0,0,0);
-                    const diff = Math.ceil((exam - now) / (1000 * 60 * 60 * 24));
-                    if (diff < 0) {
-                      countdown = "Exam passed";
-                      badgeColor = "badge badge-outline badge-success";
-                    } else if (diff === 0) {
-                      // If examTime is set, show hours left
-                      if (course.examTime) {
-                        const [examHour, examMinute] = course.examTime.split(":").map(Number);
-                        const nowTime = new Date();
-                        const examDateTime = new Date(course.examDate);
-                        examDateTime.setHours(examHour || 0, examMinute || 0, 0, 0);
-                        const msLeft = examDateTime - nowTime;
-                        const hoursLeft = Math.max(0, Math.floor(msLeft / (1000 * 60 * 60)));
-                        if (msLeft > 0) {
-                          countdown = `${hoursLeft} hour${hoursLeft !== 1 ? "s" : ""} left!`;
-                        } else {
-                          countdown = "Exam started!";
-                        }
-                      } else {
-                        countdown = "Exam today!";
-                      }
-                      badgeColor = "badge badge-error badge-outline";
-                    } else if (diff === 1) {
-                      countdown = "Exam tomorrow";
-                      badgeColor = "badge badge-error badge-outline";
-                    } else if (diff >= 2 && diff <= 7) {
-                      countdown = `${diff} days left`;
-                      badgeColor = "badge badge-warning badge-outline";
-                    } else {
-                      countdown = `${diff} days left`;
-                      badgeColor = "badge badge-info badge-outline";
-                    }
-                  }
-                  return (
-                    <button
-                      key={course.id}
-                      className="h-auto p-6 flex flex-col items-center justify-center text-center border-2 border-gray-300 dark:border-gray-600 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/courses/${course.name}`)}
+                {loadingCourses ? (
+                  Array.from({ length: 3 }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="h-auto p-6 flex flex-col items-center justify-center text-center border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 shadow hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                     >
-                      <div className="flex items-center justify-center gap-2 font-semibold text-lg text-gray-900 dark:text-gray-100">
-                        {course.name}
-                        {course.examDate && (
-                          <span className={badgeColor + " text-xs"}>{countdown}</span>
-                        )}
+                      <div className="flex items-center justify-center gap-2 font-semibold text-lg mb-2">
+                        <span className="skeleton w-20 h-6 rounded" />
                       </div>
-                      <div className="text-sm text-gray-700 dark:text-gray-300 mt-1">
-                        {course.title}
+                      <div className="skeleton w-32 h-4 rounded mb-1" />
+                    </div>
+                  ))
+                ) : (
+                  <React.Fragment>
+                    {courses.length === 0 ? (
+                      <div className="col-span-full flex flex-col items-center justify-center py-12">
+                        <div className="text-lg text-gray-500 dark:text-gray-400 mb-2">
+                          No courses found.
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          Click{" "}
+                          <span className="font-semibold">Manage</span> to get
+                          started.
+                        </div>
                       </div>
-                    </button>
-                  );
-                })}
+                    ) : (
+                      courses.map((course) => {
+                        let countdown = "";
+                        let badgeColor = "badge-info badge-outline";
+                        if (course.examDate) {
+                          const now = new Date();
+                          const exam = new Date(course.examDate);
+                          // Remove time portion for accurate day diff
+                          now.setHours(0, 0, 0, 0);
+                          exam.setHours(0, 0, 0, 0);
+                          const diff = Math.ceil(
+                            (exam - now) / (1000 * 60 * 60 * 24)
+                          );
+                          if (diff < 0) {
+                            countdown = "Exam passed";
+                            badgeColor = "badge badge-outline badge-success";
+                          } else if (diff === 0) {
+                            // If examTime is set, show hours left
+                            if (course.examTime) {
+                              const [examHour, examMinute] = course.examTime
+                                .split(":")
+                                .map(Number);
+                              const nowTime = new Date();
+                              const examDateTime = new Date(course.examDate);
+                              examDateTime.setHours(examHour || 0, examMinute || 0, 0, 0);
+                              const msLeft = examDateTime - nowTime;
+                              const hoursLeft = Math.max(
+                                0,
+                                Math.floor(msLeft / (1000 * 60 * 60))
+                              );
+                              if (msLeft > 0) {
+                                countdown = `${hoursLeft} hour${
+                                  hoursLeft !== 1 ? "s" : ""
+                                } left!`;
+                              } else {
+                                countdown = "Exam started!";
+                              }
+                            } else {
+                              countdown = "Exam today!";
+                            }
+                            badgeColor = "badge badge-error badge-outline";
+                          } else if (diff === 1) {
+                            countdown = "Exam tomorrow";
+                            badgeColor = "badge badge-error badge-outline";
+                          } else if (diff >= 2 && diff <= 7) {
+                            countdown = `${diff} days left`;
+                            badgeColor = "badge badge-warning badge-outline";
+                          } else {
+                            countdown = `${diff} days left`;
+                            badgeColor = "badge badge-info badge-outline";
+                          }
+                        }
+                        return (
+                          <button
+                            key={course.id}
+                            className="h-auto p-6 flex flex-col items-center justify-center text-center border-2 border-gray-300 dark:border-gray-600 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                            onClick={() => navigate(`/courses/${course.name}`)}
+                          >
+                            <div className="flex items-center justify-center gap-2 font-semibold text-lg text-gray-900 dark:text-gray-100">
+                              {course.name}
+                              {course.examDate && (
+                                <span className={badgeColor + " text-xs"}>{countdown}</span>
+                              )}
+                            </div>
+                            <div className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+                              {course.title}
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
+                    {showAddCourses && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+                        <div className="relative bg-base-100 rounded-xl shadow-lg w-full max-w-5xl mx-auto p-0">
+                          <button
+                            className="absolute top-2 right-2 btn btn-sm btn-circle btn-ghost"
+                            onClick={() => setShowAddCourses(false)}
+                            aria-label="Close"
+                          >
+                            ✕
+                          </button>
+                          <div className="p-4">
+                            <AddCourses
+                              onConfirm={handleConfirmCourses}
+                              initialCourses={courses.map(c => ({
+                                id: c.id,
+                                name: c.name,
+                                course_title: c.title,
+                                examDate: c.examDate,
+                                examTime: c.examTime
+                              }))}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </React.Fragment>
+                )}
               </div>
             </section>
 
