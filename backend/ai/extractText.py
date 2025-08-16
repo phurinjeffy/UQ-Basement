@@ -7,6 +7,7 @@ import tempfile
 import shutil
 import boto3
 from botocore.client import Config
+from urllib.parse import urlparse
 from selenium import webdriver
 
 from selenium.webdriver.common.by import By
@@ -43,9 +44,9 @@ def clean_filename(course_code, original_name):
     return f"{course_code}_{semester}_{year}.txt"
 
 
-def upload_to_s3(file_path, s3_key):
+def s3_client():
     session = boto3.session.Session()
-    s3 = session.client(
+    return session.client(
         service_name="s3",
         aws_access_key_id=S3_ACCESS_KEY_ID,
         aws_secret_access_key=S3_SECRET_ACCESS_KEY,
@@ -53,6 +54,18 @@ def upload_to_s3(file_path, s3_key):
         config=Config(signature_version="s3v4"),
         region_name="us-east-1",
     )
+
+
+def s3_file_exists(s3, s3_key):
+    try:
+        s3.head_object(Bucket=S3_BUCKET, Key=s3_key)
+        return True
+    except Exception:
+        return False
+
+
+def upload_to_s3(file_path, s3_key):
+    s3 = s3_client()
     with open(file_path, "rb") as f:
         s3.upload_fileobj(f, S3_BUCKET, s3_key)
     print(f"[S3] Uploaded {file_path} to {S3_BUCKET}/{s3_key}")
@@ -100,15 +113,20 @@ def download_pdfs(course_code):
     # Get PDF URLs
     pdf_urls = [el.get_attribute("href") for el in pdf_elements]
 
-    # Download PDFs one at a time
+    s3 = s3_client()
+    # Download PDFs one at a time, skip if already in S3
     for i, url in enumerate(pdf_urls, start=1):
-        print(f"[{i}/{len(pdf_urls)}] Downloading: {os.path.basename(url)}")
+        pdf_name = os.path.basename(url)
+        s3_key = f"{course_code}/{pdf_name}"
+        if s3_file_exists(s3, s3_key):
+            print(f"[S3] Skipping {pdf_name}, already exists in S3.")
+            continue
+        print(f"[{i}/{len(pdf_urls)}] Downloading: {pdf_name}")
         driver.get(url)
         time.sleep(5)  # adjust if downloads are slow
         # After download, upload to S3, then delete local file
-        local_pdf = os.path.join(download_dir, os.path.basename(url))
+        local_pdf = os.path.join(download_dir, pdf_name)
         if os.path.exists(local_pdf):
-            s3_key = f"{course_code}/{os.path.basename(url)}"
             try:
                 upload_to_s3(local_pdf, s3_key)
                 os.remove(local_pdf)
