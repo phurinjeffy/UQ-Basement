@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { getPapers, listPastPapers, getPastPaperPdfUrl } from "../api";
+import { getPapers, listPastPapers, getPastPaperPdfUrl, fetchEnrollmentDetails } from "../api";
 
 const getPaperMeta = (filename) => {
   // Example: Semester_One_Final_Examinations_2021_DECO2500.pdf
@@ -17,6 +17,49 @@ const getPaperMeta = (filename) => {
   };
 };
 
+function useCountdown(exam_date, exam_time) {
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  useEffect(() => {
+    if (!exam_date) {
+      setTimeLeft(null);
+      return;
+    }
+
+    function calculateTimeLeft() {
+      const examDateTime = new Date(
+        exam_time ? `${exam_date}T${exam_time}` : `${exam_date}T00:00:00`
+      );
+      const now = new Date();
+      const diff = examDateTime.getTime() - now.getTime();
+
+      if (diff <= 0) return null;
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+      if (!exam_time) {
+        // only show days if no exam_time
+        return { days };
+      }
+
+      return {
+        days,
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / (1000 * 60)) % 60),
+      };
+    }
+
+    setTimeLeft(calculateTimeLeft());
+
+    // update every minute
+    const interval = setInterval(() => setTimeLeft(calculateTimeLeft()), 60000);
+
+    return () => clearInterval(interval);
+  }, [exam_date, exam_time]);
+
+  return timeLeft;
+}
+
 const MockExam = () => {
   const { courseId } = useParams();
   const [downloading, setDownloading] = useState(false);
@@ -28,6 +71,22 @@ const MockExam = () => {
   const [mockExams, setMockExams] = useState([]); // Placeholder for generated exams
   const [generating, setGenerating] = useState(false);
   const [mockError, setMockError] = useState("");
+  const [enrollmentDetails, setEnrollmentDetails] = useState(null);
+  const timeLeft = useCountdown(enrollmentDetails?.exam_date, enrollmentDetails?.exam_time) || null;
+
+  let userId = "";
+      try {
+        // Extract userId from JWT token in localStorage
+        const token = localStorage.getItem("token");
+        if (token) {
+          // Decode JWT (base64 decode payload)
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.user_id;
+        }
+        if (!userId) return;
+      } catch (error) {
+        console.error("Failed to extract user ID from token:", error);
+      }
 
   // Prevent background scroll when modal is open
   useEffect(() => {
@@ -59,12 +118,18 @@ const MockExam = () => {
       .catch(() => setPastPapers([]));
   }, [courseId]);
 
+  useEffect(() => {
+    if (courseId) {
+      fetchEnrollmentDetails(userId, courseId)
+        .then(setEnrollmentDetails)
+        .catch(() => setEnrollmentDetails(null));
+    }
+  }, [courseId]);
+
   // Dummy course info (replace with real API if available)
   const courseInfo = {
     code: courseId,
-    name: "Course Name Placeholder",
-    description:
-      "This is a short description of the course. It covers the main topics and exam structure. Replace with real data if available.",
+    title: enrollmentDetails?.course_title || "",
   };
 
   return (
@@ -124,14 +189,37 @@ const MockExam = () => {
           <div className="flex-1">
             <h1 className="text-2xl font-bold mb-1">
               {courseInfo.code}{" "}
-              <span className="text-lg font-normal text-gray-500">
-                {courseInfo.name}
-              </span>
             </h1>
             <p className="text-gray-600 dark:text-gray-300 text-sm">
-              {courseInfo.description}
+              {courseInfo.title}
             </p>
           </div>
+          {timeLeft && (
+            <div className="grid grid-flow-col gap-5 text-center auto-cols-max">
+            <div className="flex flex-col p-2 bg-neutral rounded-box text-neutral-content">
+              <span className="countdown font-mono text-5xl">
+                <span style={{"--value":timeLeft.days} /* as React.CSSProperties */ } aria-live="polite">{timeLeft.days}</span>
+              </span>
+              days
+            </div>
+            {(timeLeft.hours != null && timeLeft.minutes != null) && (
+              <>
+            <div className="flex flex-col p-2 bg-neutral rounded-box text-neutral-content">
+              <span className="countdown font-mono text-5xl">
+                <span style={{"--value":timeLeft.hours} /* as React.CSSProperties */ } aria-live="polite">{timeLeft.hours}</span>
+              </span>
+              hours
+            </div>
+            <div className="flex flex-col p-2 bg-neutral rounded-box text-neutral-content">
+              <span className="countdown font-mono text-5xl">
+                <span style={{"--value":timeLeft.minutes} /* as React.CSSProperties */ } aria-live="polite">{timeLeft.minutes}</span>
+              </span>
+              min
+            </div>
+            </>
+            )}
+          </div>
+          )}
         </div>
 
         {/* Tabs */}

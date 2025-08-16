@@ -85,3 +85,10 @@ export async function getEnrollments(userId) {
     return res.data.enrollments || [];
 }
 
+export async function fetchEnrollmentDetails(userId, courseName) {
+    const res = await axios.get(`${API_BASE}/enrollment-details`, {
+        params: { user_id: userId, course_name: courseName }
+    });
+    console.log(res.data);
+    return res.data;
+}

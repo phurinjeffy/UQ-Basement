@@ -299,3 +299,53 @@ async def update_enrollments(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update enrollments: {str(e)}"
         )
+    
+@router.get("/enrollment-details")
+async def get_enrollment_details(user_id: UUID = Query(...), course_name: str = Query(...)):
+    """Get enrollment details for a user and course name (course title, exam date, exam time)"""
+    try:
+        async with httpx.AsyncClient() as client:
+            # Get course info by name
+            course_response = await client.get(
+                f"{SUPABASE_REST_URL}/courses",
+                headers=get_supabase_headers(),
+                params={"name": f"eq.{course_name}", "select": "id,name,course_title"}
+            )
+            if course_response.status_code != 200 or not course_response.json():
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Course not found"
+                )
+            course = course_response.json()[0]
+            course_id = course["id"]
+
+            # Get enrollment for user and course
+            enrollment_response = await client.get(
+                f"{SUPABASE_REST_URL}/enrollments",
+                headers=get_supabase_headers(),
+                params={
+                    "user_id": f"eq.{user_id}",
+                    "course_id": f"eq.{course_id}",
+                    "select": "exam_date,exam_time"
+                }
+            )
+            if enrollment_response.status_code != 200 or not enrollment_response.json():
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Enrollment not found"
+                )
+            enrollment = enrollment_response.json()[0]
+
+            return {
+                "course_title": course["course_title"],
+                "exam_date": enrollment["exam_date"],
+                "exam_time": enrollment["exam_time"]
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting enrollment details: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get enrollment details: {str(e)}"
+        )
