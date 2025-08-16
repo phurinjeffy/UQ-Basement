@@ -1,26 +1,16 @@
+import { useNavigate } from "react-router-dom";
+
 import React, { useState } from "react";
 import AddCourses from "../components/AddCourses.jsx";
 
 const Dashboard = () => {
   const [showAddCourses, setShowAddCourses] = useState(false);
   const [courses, setCourses] = useState([
-    { id: 1, name: "COMP3506", title: "Algorithms & Data Structures" },
+    { id: 1, name: "DECO2500", title: "Human-Computer Interactions" },
     { id: 2, name: "COMP3702", title: "Artificial Intelligence" },
-    { id: 3, name: "COMP3710", title: "Pattern Recognition" },
-    { id: 4, name: "COMP4601", title: "Software Architecture" },
+    { id: 3, name: "CSSE2310", title: "System Programming" },
+    { id: 4, name: "CSSE3200", title: "Software Process" },
   ]);
-
-  // Handler for confirming courses from AddCourses
-  const handleConfirmCourses = (newCourses) => {
-    setCourses(
-      newCourses.map((c, idx) => ({
-        id: idx + 1,
-        name: c.name,
-        title: c.course_title || c.title || ""
-      }))
-    );
-    setShowAddCourses(false);
-  };
 
   // Use email prefix as username
   let username = "Student";
@@ -30,6 +20,7 @@ const Dashboard = () => {
       username = user.email.split("@")[0];
     }
   } catch {}
+  const navigate = useNavigate();
   const progressValue = 65;
   const recentActivity = [
     { type: "Mock Exam", course: "COMP3506", date: "2025-08-15", score: 82 },
@@ -174,7 +165,8 @@ const Dashboard = () => {
                 {courses.map((course) => (
                   <button
                     key={course.id}
-                    className="h-auto p-6 flex flex-col items-center justify-center text-center border-2 border-gray-300 dark:border-gray-600 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
+                    className="h-auto p-6 flex flex-col items-center justify-center text-center border-2 border-gray-300 dark:border-gray-600 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/courses/${course.name}`)}
                   >
                     <div className="font-semibold text-lg text-gray-900 dark:text-gray-100">
                       {course.name}

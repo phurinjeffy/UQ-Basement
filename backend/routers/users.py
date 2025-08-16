@@ -3,6 +3,7 @@ import httpx
 from typing import Optional, List
 from models import UserCreate, UserLogin, UserUpdate, PasswordUpdate, UserResponse, CourseEnrollment
 from config import get_supabase_headers, SUPABASE_REST_URL, hash_password, verify_password, logger
+from uuid import UUID
 
 router = APIRouter()
 
@@ -165,7 +166,7 @@ async def login_user(login_data: UserLogin):
         )
 
 @router.get("/users/{user_id}")
-async def get_user(user_id: str):
+async def get_user(user_id: UUID):
     """Get a specific user by ID with their enrolled courses"""
     try:
         async with httpx.AsyncClient() as client:
@@ -194,10 +195,10 @@ async def get_user(user_id: str):
             
             user = users[0]
             
-            # Get user's course enrollments if user_courses table exists
+            # Get user's course enrollments from course table
             try:
                 courses_response = await client.get(
-                    f"{SUPABASE_REST_URL}/user_courses",
+                    f"{SUPABASE_REST_URL}/courses",
                     headers=get_supabase_headers(),
                     params={"user_id": f"eq.{user_id}"}
                 )
@@ -207,7 +208,7 @@ async def get_user(user_id: str):
                 else:
                     user['courses'] = []
             except:
-                # If user_courses table doesn't exist, just set empty array
+                # If course table doesn't exist, just set empty array
                 user['courses'] = []
             
             return {"user": user}
@@ -222,7 +223,7 @@ async def get_user(user_id: str):
         )
 
 @router.put("/users/{user_id}")
-async def update_user(user_id: str, user_update: UserUpdate):
+async def update_user(user_id: UUID, user_update: UserUpdate):
     """Update a user by ID (only email can be updated)"""
     try:
         # Only include non-None values
@@ -245,7 +246,7 @@ async def update_user(user_id: str, user_update: UserUpdate):
                 
                 if check_response.status_code == 200:
                     existing_users = check_response.json()
-                    if existing_users and existing_users[0]['id'] != user_id:
+                    if existing_users and existing_users[0]['id'] != str(user_id):
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
                             detail="User with this email already exists"
@@ -295,7 +296,7 @@ async def update_user(user_id: str, user_update: UserUpdate):
         )
 
 @router.put("/users/{user_id}/password")
-async def update_user_password(user_id: str, password_data: PasswordUpdate):
+async def update_user_password(user_id: UUID, password_data: PasswordUpdate):
     """Update a user's password"""
     try:
         async with httpx.AsyncClient() as client:
@@ -356,7 +357,7 @@ async def update_user_password(user_id: str, password_data: PasswordUpdate):
         )
 
 @router.delete("/users/{user_id}")
-async def delete_user(user_id: str):
+async def delete_user(user_id: UUID):
     """Delete a user by ID"""
     try:
         async with httpx.AsyncClient() as client:
@@ -398,9 +399,9 @@ async def delete_user(user_id: str):
             detail=f"Failed to delete user: {str(e)}"
         )
 
-# Course enrollment endpoints (if you have a user_courses table)
+# Course enrollment endpoints (using course table)
 @router.post("/users/{user_id}/courses")
-async def enroll_user_in_course(user_id: str, course: CourseEnrollment):
+async def enroll_user_in_course(user_id: UUID, course: CourseEnrollment):
     """Enroll a user in a course"""
     try:
         async with httpx.AsyncClient() as client:
@@ -419,7 +420,7 @@ async def enroll_user_in_course(user_id: str, course: CourseEnrollment):
             
             # Check if already enrolled
             existing_enrollment = await client.get(
-                f"{SUPABASE_REST_URL}/user_courses",
+                f"{SUPABASE_REST_URL}/courses",
                 headers=get_supabase_headers(),
                 params={
                     "user_id": f"eq.{user_id}",
@@ -435,7 +436,7 @@ async def enroll_user_in_course(user_id: str, course: CourseEnrollment):
             
             # Create enrollment
             enrollment_data = {
-                "user_id": user_id,
+                "user_id": str(user_id),  # Convert UUID to string
                 "course_code": course.course_code,
                 "course_name": course.course_name,
                 "semester": course.semester,
@@ -443,7 +444,7 @@ async def enroll_user_in_course(user_id: str, course: CourseEnrollment):
             }
             
             create_response = await client.post(
-                f"{SUPABASE_REST_URL}/user_courses",
+                f"{SUPABASE_REST_URL}/courses",
                 headers=get_supabase_headers(),
                 json=enrollment_data
             )
@@ -480,7 +481,7 @@ async def enroll_user_in_course(user_id: str, course: CourseEnrollment):
         )
 
 @router.get("/users/{user_id}/courses")
-async def get_user_courses(user_id: str):
+async def get_user_courses(user_id: UUID):
     """Get all courses for a specific user"""
     try:
         async with httpx.AsyncClient() as client:
@@ -501,7 +502,7 @@ async def get_user_courses(user_id: str):
             
             # Get user's courses
             courses_response = await client.get(
-                f"{SUPABASE_REST_URL}/user_courses",
+                f"{SUPABASE_REST_URL}/courses",
                 headers=get_supabase_headers(),
                 params={"user_id": f"eq.{user_id}"}
             )
@@ -530,13 +531,13 @@ async def get_user_courses(user_id: str):
         )
 
 @router.delete("/users/{user_id}/courses/{course_code}")
-async def unenroll_user_from_course(user_id: str, course_code: str):
+async def unenroll_user_from_course(user_id: UUID, course_code: str):
     """Remove a user from a course"""
     try:
         async with httpx.AsyncClient() as client:
             # Check if enrollment exists
             check_response = await client.get(
-                f"{SUPABASE_REST_URL}/user_courses",
+                f"{SUPABASE_REST_URL}/courses",
                 headers=get_supabase_headers(),
                 params={
                     "user_id": f"eq.{user_id}",
@@ -552,7 +553,7 @@ async def unenroll_user_from_course(user_id: str, course_code: str):
             
             # Delete enrollment
             delete_response = await client.delete(
-                f"{SUPABASE_REST_URL}/user_courses",
+                f"{SUPABASE_REST_URL}/courses",
                 headers=get_supabase_headers(),
                 params={
                     "user_id": f"eq.{user_id}",

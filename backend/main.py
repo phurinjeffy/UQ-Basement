@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import users
+from routers import users, courses
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -9,7 +9,8 @@ app = FastAPI(
 )
 
 # Include routers
-app.include_router(users.router, prefix="/api/v1")
+app.include_router(users.router, prefix="/api/v1", tags=["Users"])
+app.include_router(courses.router, prefix="/api/v1", tags=["Courses"])
 
 # CORS middleware setup
 from fastapi.middleware.cors import CORSMiddleware
