@@ -10,7 +10,7 @@ function Home() {
     password: "",
     confirmPassword: "",
   });
-  const { login, signup, loading, error } = useAuth();
+  const { login, signup, loading, error, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,6 +20,13 @@ function Home() {
     link.rel = "stylesheet";
     document.head.appendChild(link);
   }, []);
+
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
