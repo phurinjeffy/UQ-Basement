@@ -195,19 +195,27 @@ const MockExam = () => {
         }
 
         const [data] = await Promise.all([
-          fetchQuizzes(courseUUID, 1, 50),
+          fetchQuizzes(userId, courseUUID, 1, 50),
           minDelay
         ]);
 
         if (cancelled) return;
 
+        console.log('Raw fetchQuizzes response:', data);
+
         let items = null;
         if (Array.isArray(data)) items = data;
+        else if (data && Array.isArray(data.data)) items = data.data;
         else if (data && Array.isArray(data.results)) items = data.results;
         else if (data && Array.isArray(data.quizzes)) items = data.quizzes;
         else if (data && Array.isArray(data.items)) items = data.items;
+        else if (data && data.data && Array.isArray(data.data.quizzes)) items = data.data.quizzes;
+        else if (data && data.data && Array.isArray(data.data.results)) items = data.data.results;
+        
+        console.log('Extracted items:', items);
         
         if (items === null || items.length === 0) {
+          console.log('No items found, setting mockExams to empty array');
           if (!cancelled) setMockExams([]);
           return;
         }
@@ -801,7 +809,7 @@ const MockExam = () => {
                   }
                   setGenerating(false);
                 }}
-                disabled={generating}
+                disabled={generating || mockExams === null}
               >
                 {generating ? (
                   <span className="flex items-center gap-2">

@@ -141,15 +141,8 @@ export async function fetchCourseByCode(courseCode) {
 }
 
 // Fetch quizzes (mock exams) for a course including questions
-export async function fetchQuizzes(courseId, page = 1, size = 50) {
-    const res = await axios.get(`${API_BASE}/quiz/`, {
-        params: {
-            page,
-            size,
-            include_questions: true,
-            course_id: courseId,
-        },
-    });
+export async function fetchQuizzes(userId, courseId, page = 1, size = 50) {
+    const res = await axios.get(`${API_BASE}/quiz/by-user-course/${userId}/${courseId}`);
     return res.data; // consumer should handle array or paged shape
 }
 
