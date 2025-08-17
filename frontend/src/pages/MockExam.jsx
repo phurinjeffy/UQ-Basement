@@ -31,6 +31,31 @@ const getPaperMeta = (filename) => {
   };
 };
 
+const formatDateTime = (dateString) => {
+  if (!dateString) return "";
+  
+  try {
+    const date = new Date(dateString);
+    
+    // Check if the date is valid
+    if (isNaN(date.getTime())) return dateString;
+    
+    // Format: "Dec 15, 2024 at 2:30 PM"
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric' 
+    }) + ' at ' + date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  } catch (error) {
+    // If formatting fails, return original string
+    return dateString;
+  }
+};
+
 function useCountdown(exam_date, exam_time) {
   const [timeLeft, setTimeLeft] = useState(null);
 
@@ -637,7 +662,7 @@ const MockExam = () => {
                   </svg>
                   <div>
                     <div className="font-semibold text-gray-800 dark:text-gray-100 truncate">{selectedExam?.name}</div>
-                    <div className="text-xs text-gray-500">{selectedExam?.date}</div>
+                    <div className="text-xs text-gray-500">{formatDateTime(selectedExam?.date)}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1100,7 +1125,7 @@ const MockExam = () => {
                       <span className="font-semibold">{exam.name}</span>
                     </div>
                     <div className="truncate text-gray-700 dark:text-gray-200 text-sm mb-2">
-                      Generated: {exam.date}
+                      Created: {formatDateTime(exam.date)}
                     </div>
                     <div className="mt-auto flex gap-2">
                       {/* Dynamic button based on results status and marking state */}
