@@ -10,6 +10,7 @@ UQ-Basement is an intelligent web application that revolutionizes exam preparati
 ## 🌟 Features
 
 ### 📚 Past Papers Management
+<img width="2839" height="1513" alt="image" src="https://github.com/user-attachments/assets/c8c6e4c7-73c0-4a02-ae9c-dcc1155d880b" />
 - **Automated Download**: Seamlessly downloads past papers from UQ Library resources
 - **Smart Organization**: Sorts papers by year and semester for easy navigation
 - **PDF Viewer**: Built-in PDF viewer with AI assistance for solving questions
