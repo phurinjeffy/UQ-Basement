@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { fetchUserProfile, deleteUser } from "../api";
+import { fetchUserProfile, deleteUser, getUserEnrollments, getUserQuizzes } from "../api";
 import { useNavigate } from "react-router-dom";
 
 function Profile() {
   const [user, setUser] = useState(null);
+  const [enrollments, setEnrollments] = useState([]);
+  const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -24,15 +26,30 @@ function Profile() {
       navigate("/", { replace: true });
       return;
     }
-    fetchUserProfile(userId)
-      .then((res) => {
-        setUser(res.user);
+
+    const fetchProfileData = async () => {
+      try {
+        // Fetch user profile
+        const userRes = await fetchUserProfile(userId);
+        setUser(userRes.user);
+
+        // Fetch user enrollments
+        const enrollmentsRes = await getUserEnrollments(userId);
+        setEnrollments(enrollmentsRes.enrollments || []);
+
+        // Fetch user quizzes
+        const quizzesRes = await getUserQuizzes(userId);
+        setQuizzes(quizzesRes.data || []);
+
         setLoading(false);
-      })
-      .catch((err) => {
-        setError("Failed to load profile");
+      } catch (err) {
+        console.error("Error fetching profile data:", err);
+        setError("Failed to load profile data");
         setLoading(false);
-      });
+      }
+    };
+
+    fetchProfileData();
   }, [navigate]);
 
   const handleDelete = async () => {
@@ -102,14 +119,59 @@ function Profile() {
         {/* Profile Stats */}
         <div className="grid grid-cols-2 gap-4 w-full mb-8">
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 text-center">
-            <div className="text-2xl font-bold text-indigo-600">0</div>
+            <div className="text-2xl font-bold text-indigo-600">{enrollments.length}</div>
             <div className="text-sm text-gray-600">Courses</div>
           </div>
           <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">0</div>
+            <div className="text-2xl font-bold text-purple-600">{quizzes.length}</div>
             <div className="text-sm text-gray-600">Exams Taken</div>
           </div>
         </div>
+
+        {/* Courses List */}
+        {enrollments.length > 0 && (
+          <div className="w-full mb-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">Enrolled Courses</h3>
+            <div className="space-y-2">
+              {enrollments.map((enrollment, index) => (
+                <div key={index} className="bg-gray-50 rounded-lg p-3 text-sm">
+                  <div className="font-medium text-gray-800">
+                    {enrollment.course?.name || 'Unknown Course'}
+                  </div>
+                  <div className="text-gray-600">
+                    {enrollment.course?.course_title || 'No title available'}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {enrollment.semester} {enrollment.year}
+                    {enrollment.exam_date && (
+                      <span className="ml-2">• Exam: {enrollment.exam_date}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Recent Exams */}
+        {quizzes.length > 0 && (
+          <div className="w-full mb-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">Recent Exams</h3>
+            <div className="space-y-2">
+              {quizzes.slice(0, 5).map((quiz, index) => (
+                <div key={index} className="bg-gray-50 rounded-lg p-3 text-sm">
+                  <div className="font-medium text-gray-800">{quiz.title}</div>
+                  <div className="text-gray-600">{quiz.description || 'Mock Exam'}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {quiz.topic && <span>Topic: {quiz.topic} • </span>}
+                    {quiz.questions?.length || 0} questions
+                    {quiz.time_limit && <span> • {quiz.time_limit} mins</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="w-full space-y-3">

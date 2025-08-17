@@ -183,4 +183,28 @@ export async function fetchResults(userId, quizId) {
         console.error("Error fetching results:", err.response?.data || err);
         throw err;
     }
+}
+
+// Get user's enrollments with course details for profile
+export async function getUserEnrollments(userId) {
+    try {
+        const res = await axios.get(`${API_BASE}/enrollments`, {
+            params: { user_id: userId }
+        });
+        return res.data;
+    } catch (err) {
+        console.error("Error fetching user enrollments:", err.response?.data || err);
+        throw err;
+    }
+}
+
+// Get user's quizzes (exams taken) for profile
+export async function getUserQuizzes(userId) {
+    try {
+        const res = await axios.get(`${API_BASE}/quiz/by-user/${userId}`);
+        return res.data;
+    } catch (err) {
+        console.error("Error fetching user quizzes:", err.response?.data || err);
+        throw err;
+    }
 }   
