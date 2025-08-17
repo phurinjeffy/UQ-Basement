@@ -36,7 +36,7 @@ export default function PDFWithAI({ url }) {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiAnswer, setAiAnswer] = useState('');
   const [error, setError] = useState('');
-  const [scale, setScale] = useState(1.0);
+  const [scale, setScale] = useState(1.1);
   const [viewerHeight, setViewerHeight] = useState(null); // CSS pixel height of rendered PDF page
 
   // Load + render page
@@ -156,7 +156,7 @@ export default function PDFWithAI({ url }) {
   const disableNext = pageNumber >= numPages || loading;
 
   return (
-    <div className="flex w-full h-full bg-gray-100 dark:bg-gray-900">
+    <div className="flex w-full h-full bg-gray-100 dark:bg-gray-900 p-4">
       {/* Main Container */}
       <div className="flex flex-row gap-4 w-full h-full">
         {/* PDF Viewer Section */}
