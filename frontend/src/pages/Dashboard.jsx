@@ -302,26 +302,28 @@ const Dashboard = () => {
                         onClick={() => navigate(`/courses/${course.name}`)}
                         className="group p-4 bg-white/50 dark:bg-slate-700/50 rounded-xl border border-slate-200/50 dark:border-slate-600/50 hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200"
                       >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="text-left">
-                            <h3 className="font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                              {course.name}
-                            </h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
-                              {course.title}
-                            </p>
+                        <div className="flex flex-col h-full">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="text-left flex-1">
+                              <h3 className="font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                {course.name}
+                              </h3>
+                              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                                {course.title}
+                              </p>
+                            </div>
+                            {countdown && (
+                              <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${badgeColor}`}>
+                                {countdown}
+                              </span>
+                            )}
                           </div>
-                          {countdown && (
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${badgeColor}`}>
-                              {countdown}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-slate-400 dark:text-slate-500">Click to explore</span>
-                          <svg className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
+                          <div className="flex items-center justify-between mt-auto">
+                            <span className="text-xs text-slate-400 dark:text-slate-500">Click to explore</span>
+                            <svg className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
                         </div>
                       </button>
                     );
