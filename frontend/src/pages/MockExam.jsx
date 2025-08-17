@@ -549,47 +549,78 @@ const MockExam = () => {
                 No past papers found for this course.
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {pastPapers.map((pdf) => {
-                  const meta = getPaperMeta(pdf);
-                  return (
-                    <div
-                      key={pdf}
-                      className="bg-white dark:bg-gray-700 rounded-lg shadow p-4 flex flex-col gap-2 border border-gray-100 dark:border-gray-600"
-                    >
-                      <div className="flex items-center gap-2">
-                        <svg
-                          className="w-6 h-6 text-red-500"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 4v16m8-8H4"
-                          />
-                        </svg>
-                        <span className="font-semibold">
-                          {meta.year} {meta.semester}
-                        </span>
+              <div className="space-y-8">
+                {(() => {
+                  // Process papers by year and semester
+                  const papersByYear = {};
+                  
+                  // Group papers by year
+                  pastPapers.forEach(pdf => {
+                    const meta = getPaperMeta(pdf);
+                    if (meta.year) {
+                      if (!papersByYear[meta.year]) {
+                        papersByYear[meta.year] = [];
+                      }
+                      papersByYear[meta.year].push({ pdf, meta });
+                    }
+                  });
+                  
+                  // Sort each year's papers by semester
+                  Object.keys(papersByYear).forEach(year => {
+                    papersByYear[year].sort((a, b) => {
+                      // Sort by semester (1 comes before 2)
+                      return a.meta.semester.localeCompare(b.meta.semester);
+                    });
+                  });
+                  
+                  // Get years in descending order (newest first)
+                  const sortedYears = Object.keys(papersByYear).sort((a, b) => b - a);
+                  
+                  return sortedYears.map(year => (
+                    <div key={year} className="space-y-4">
+                      <h3 className="text-lg font-bold border-b pb-2">Year {year}</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {papersByYear[year].map(({ pdf, meta }) => (
+                          <div
+                            key={pdf}
+                            className="bg-white dark:bg-gray-700 rounded-lg shadow p-4 flex flex-col gap-2 border border-gray-100 dark:border-gray-600"
+                          >
+                            <div className="flex items-center gap-2">
+                              <svg
+                                className="w-6 h-6 text-red-500"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M12 4v16m8-8H4"
+                                />
+                              </svg>
+                              <span className="font-semibold">
+                                {meta.semester}
+                              </span>
+                            </div>
+                            <div className="truncate text-gray-700 dark:text-gray-200 text-sm mb-2">
+                              {meta.name}
+                            </div>
+                            <button
+                              className="btn btn-sm btn-outline mt-auto"
+                              onClick={() => {
+                                setPdfView(pdf);
+                                setShowModal(true);
+                              }}
+                            >
+                              View PDF
+                            </button>
+                          </div>
+                        ))}
                       </div>
-                      <div className="truncate text-gray-700 dark:text-gray-200 text-sm mb-2">
-                        {meta.name}
-                      </div>
-                      <button
-                        className="btn btn-sm btn-outline mt-auto"
-                        onClick={() => {
-                          setPdfView(pdf);
-                          setShowModal(true);
-                        }}
-                      >
-                        View PDF
-                      </button>
                     </div>
-                  );
-                })}
+                  ));
+                })()}
               </div>
             )}
           </div>
