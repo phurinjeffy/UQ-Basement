@@ -120,3 +120,71 @@ async def get_checks_by_user_and_quiz(user_id: str, quiz_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/user-exam-stats/{user_id}")
+async def get_user_exam_stats(user_id: str):
+    """Get statistics about exams taken by a user (based on submitted answers)"""
+    try:
+        async with httpx.AsyncClient() as client:
+            # Get distinct quiz_ids from answers table for this user
+            resp = await client.get(
+                f"{SUPABASE_REST_URL}/answers?user_id=eq.{user_id}&select=quiz_id",
+                headers=get_supabase_headers()
+            )
+            if resp.status_code != 200:
+                raise HTTPException(status_code=resp.status_code, detail=resp.text)
+            
+            answers = resp.json()
+            
+            # Get unique quiz_ids (exams taken)
+            unique_quiz_ids = list(set(answer["quiz_id"] for answer in answers if answer.get("quiz_id")))
+            exams_taken = len(unique_quiz_ids)
+            
+            # Get checked answers to calculate average score
+            checked_resp = await client.get(
+                f"{SUPABASE_REST_URL}/checked_answers?user_id=eq.{user_id}&select=checks",
+                headers=get_supabase_headers()
+            )
+            
+            avg_score = 0
+            if checked_resp.status_code == 200:
+                checked_answers = checked_resp.json()
+                total_score = 0
+                total_exams_with_scores = 0
+                
+                for row in checked_answers:
+                    check_data = row.get("checks")
+                    if isinstance(check_data, str):
+                        try:
+                            check_data = json.loads(check_data)
+                        except json.JSONDecodeError:
+                            continue
+                    
+                    if check_data and isinstance(check_data, dict):
+                        # Calculate score from check_data
+                        correct = 0
+                        total = 0
+                        for key, value in check_data.items():
+                            if isinstance(value, dict) and "correct" in value:
+                                total += 1
+                                if value["correct"]:
+                                    correct += 1
+                        
+                        if total > 0:
+                            score = (correct / total) * 100
+                            total_score += score
+                            total_exams_with_scores += 1
+                
+                if total_exams_with_scores > 0:
+                    avg_score = round(total_score / total_exams_with_scores, 1)
+            
+            return {
+                "exams_taken": exams_taken,
+                "avg_score": avg_score,
+                "unique_quiz_ids": unique_quiz_ids
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

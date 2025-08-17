@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { fetchUserProfile, deleteUser, getUserEnrollments, getUserQuizzes } from "../api";
+import { fetchUserProfile, deleteUser, getUserEnrollments, getUserExamStats } from "../api";
 import { useNavigate } from "react-router-dom";
 
 function Profile() {
   const [user, setUser] = useState(null);
   const [enrollments, setEnrollments] = useState([]);
-  const [quizzes, setQuizzes] = useState([]);
+  const [examStats, setExamStats] = useState({ exams_taken: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -38,10 +38,12 @@ function Profile() {
         console.log("Enrollments response:", enrollmentsRes);
         setEnrollments(enrollmentsRes.enrollments || []);
 
-        // Fetch user quizzes
-        const quizzesRes = await getUserQuizzes(userId);
-        console.log("Quizzes response:", quizzesRes);
-        setQuizzes(quizzesRes.data?.quizzes || []);
+        // Fetch user exam stats (actual exams taken)
+        const examStatsRes = await getUserExamStats(userId);
+        console.log("Exam stats response:", examStatsRes);
+        setExamStats({
+          exams_taken: examStatsRes.exams_taken || 0
+        });
 
         setLoading(false);
       } catch (err) {
@@ -124,9 +126,9 @@ function Profile() {
             <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{enrollments.length}</div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Courses</div>
           </div>
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-xl p-4 text-center border border-purple-100 dark:border-purple-800/50">
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{quizzes.length}</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Exams Taken</div>
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-purple-600">{examStats.exams_taken}</div>
+            <div className="text-sm text-gray-600">Exams Taken</div>
           </div>
         </div>
 
@@ -161,24 +163,25 @@ function Profile() {
 
         {/* Recent Exams */}
         <div className="w-full mb-6">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Recent Exams</h3>
-          {quizzes.length > 0 ? (
-            <div className="space-y-2">
-              {quizzes.slice(0, 5).map((quiz, index) => (
-                <div key={index} className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-3 text-sm border border-gray-100 dark:border-slate-600/50">
-                  <div className="font-medium text-gray-800 dark:text-gray-200">{quiz.title}</div>
-                  <div className="text-gray-600 dark:text-gray-400">{quiz.description || 'Mock Exam'}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                    {quiz.topic && <span>Topic: {quiz.topic} • </span>}
-                    {quiz.questions?.length || 0} questions
-                    {quiz.time_limit && <span> • {quiz.time_limit} mins</span>}
-                  </div>
-                </div>
-              ))}
+          <h3 className="text-lg font-semibold text-gray-800 mb-3">Exam Performance</h3>
+          {examStats.exams_taken > 0 ? (
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-green-600 mb-1">
+                {examStats.exams_taken}
+              </div>
+              <div className="text-sm text-gray-600">
+                {examStats.exams_taken === 1 ? 'Exam Completed' : 'Exams Completed'}
+              </div>
+              <div className="text-xs text-gray-500 mt-2">
+                Keep taking more exams to improve your skills!
+              </div>
             </div>
           ) : (
             <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 text-center text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-slate-600/50">
               No exams taken yet
+              <div className="text-xs text-gray-400 mt-1">
+                Start your first mock exam to track your progress
+              </div>
             </div>
           )}
         </div>

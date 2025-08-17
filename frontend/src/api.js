@@ -207,4 +207,15 @@ export async function getUserQuizzes(userId) {
         console.error("Error fetching user quizzes:", err.response?.data || err);
         throw err;
     }
+}
+
+// Get user's exam statistics (based on actual submitted answers)
+export async function getUserExamStats(userId) {
+    try {
+        const res = await axios.get(`${API_BASE}/user-exam-stats/${userId}`);
+        return res.data;
+    } catch (err) {
+        console.error("Error fetching user exam stats:", err.response?.data || err);
+        throw err;
+    }
 }   
