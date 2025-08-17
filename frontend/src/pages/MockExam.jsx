@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import React, { useState, useEffect } from "react";
+import PDFWithAI from "../components/PDFWithAI";
 import { useParams } from "react-router-dom";
 import Breadcrumbs from "../components/Breadcrumbs";
 import {
@@ -992,13 +993,16 @@ const MockExam = () => {
                   </svg>
                 </button>
               </div>
-              <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="flex-1 flex flex-col min-h-[80vh]">
+                <PDFWithAI url={getPastPaperPdfUrl(courseId, pdfView)} />
+              {/* <div className="flex-1 flex flex-col items-center justify-center">
                 <iframe
                   src={getPastPaperPdfUrl(courseId, pdfView)}
                   title={pdfView}
                   className="w-full h-full flex-1 border-none bg-white dark:bg-gray-900"
                   style={{ minHeight: "80vh" }}
                 />
+              </div> */}
               </div>
             </div>
           </div>
