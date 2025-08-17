@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 import AddCourses from "../components/AddCourses.jsx";
-import { updateEnrollments, getEnrollments, fetchCourseById, getUserQuizzes } from "../api.js";
+import { updateEnrollments, getEnrollments, fetchCourseById, getUserQuizzes, getUserExamStats } from "../api.js";
 import Breadcrumbs from "../components/Breadcrumbs";
 
 const Dashboard = () => {
@@ -9,7 +9,7 @@ const Dashboard = () => {
   const [courses, setCourses] = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [recentActivity, setRecentActivity] = useState([]);
-  const [quizStats, setQuizStats] = useState({ totalQuizzes: 0, avgScore: 0 });
+  const [examStats, setExamStats] = useState({ exams_taken: 0, avg_score: 0 });
 
   // Fetch enrollments on mount
   useEffect(() => {
@@ -44,17 +44,16 @@ const Dashboard = () => {
 
         // Fetch user quizzes for recent activity and stats
         try {
+          // Get exam statistics based on submitted answers
+          const examStatsRes = await getUserExamStats(userId);
+          setExamStats({
+            exams_taken: examStatsRes.exams_taken || 0,
+            avg_score: examStatsRes.avg_score || 0
+          });
+
+          // Get user quizzes for recent activity
           const quizzesRes = await getUserQuizzes(userId);
           const quizzes = quizzesRes.data?.quizzes || [];
-          
-          // Calculate stats
-          const totalQuizzes = quizzes.length;
-          let avgScore = 0;
-          if (totalQuizzes > 0) {
-            // For now, we'll use a placeholder avg score since we don't have actual scores
-            avgScore = 78; // This could be calculated from actual quiz results if available
-          }
-          setQuizStats({ totalQuizzes, avgScore });
 
           // Build recent activity from quizzes
           const activity = quizzes
@@ -195,8 +194,8 @@ const Dashboard = () => {
               <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-lg rounded-2xl p-6 border border-white/20 dark:border-slate-700/20 shadow-xl">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Mock Exams</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{quizStats.totalQuizzes}</p>
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Exams Taken</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{examStats.exams_taken}</p>
                   </div>
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -210,7 +209,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Avg Score</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{quizStats.avgScore}%</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{examStats.avg_score}%</p>
                   </div>
                   <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
