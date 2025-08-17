@@ -316,6 +316,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **OpenRouter & OpenAI** for AI capabilities
 - **Supabase** for the excellent backend infrastructure
 - **React & FastAPI Communities** for amazing documentation
+- **ChatGPT & GitHub Copilot** for assisting with code development and debugging
 
 
 ---
