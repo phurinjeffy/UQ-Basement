@@ -84,3 +84,39 @@ async def get_answers(user_id: str = Query(None), quiz_id: str = Query(None)):
             return {"answers": resp.json()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/checks/{user_id}/{quiz_id}")
+async def get_checks_by_user_and_quiz(user_id: str, quiz_id: str):
+    """Get an array of checks for a user and quiz."""
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{SUPABASE_REST_URL}/checked_answers?user_id=eq.{user_id}&quiz_id=eq.{quiz_id}",
+                headers=get_supabase_headers()
+            )
+            if resp.status_code != 200:
+                raise HTTPException(status_code=resp.status_code, detail=resp.text)
+            
+            checked_answers = resp.json()
+            all_checks = []
+            
+            for row in checked_answers:
+                # Extract the check JSON from each row
+                check_data = row.get("checks")
+                
+                # If check_data is a string (JSON), parse it
+                if isinstance(check_data, str):
+                    try:
+                        check_data = json.loads(check_data)
+                    except json.JSONDecodeError:
+                        continue
+                
+                # If check_data is valid, add it to all_checks
+                if check_data:
+                    all_checks.append(check_data)
+            
+            return {"checks": all_checks}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
