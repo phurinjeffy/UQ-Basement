@@ -230,28 +230,91 @@ npm run dev
 
 ## 🔌 API Endpoints
 
-### Authentication
+### 👤 Authentication & Users
+- `GET /api/v1/users` - List all users (admin)
 - `POST /api/v1/users` - User registration
 - `POST /api/v1/users/login` - User login
 - `GET /api/v1/users/{user_id}` - Get user profile
+- `PUT /api/v1/users/{user_id}` - Update user profile
+- `PUT /api/v1/users/{user_id}/password` - Change user password
+- `DELETE /api/v1/users/{user_id}` - Delete user account
+- `POST /api/v1/users/{user_id}/courses` - Add courses to user
+- `GET /api/v1/users/{user_id}/courses` - Get user's courses
+- `DELETE /api/v1/users/{user_id}/courses/{course_code}` - Remove course from user
 
-### Courses & Enrollment
-- `GET /api/v1/courses` - List available courses
-- `POST /api/v1/enrollments` - Enroll in courses
-- `GET /api/v1/enrollment-details` - Get enrollment info
+### 📚 Courses Management
+- `GET /api/v1/courses` - List courses with pagination and filters
+- `GET /api/v1/courses/search-by-code` - Search course by code
+- `GET /api/v1/courses/{course_id}` - Get specific course details
+- `POST /api/v1/courses` - Create new course
+- `PUT /api/v1/courses/{course_id}` - Update course information
+- `DELETE /api/v1/courses/{course_id}` - Delete course
+- `POST /api/v1/sync-uq-courses` - Sync courses from UQ API
+- `POST /api/v1/batch-create-courses` - Bulk create courses
 
-### AI Features
-- `POST /ai/get-papers/{course_code}` - Download past papers
-- `GET /ai/past-papers/{course_code}` - List available papers
-- `POST /ai/generate-questions-json/{course_code}` - Generate questions
-- `POST /ai/solve-paper` - Get AI assistance for problems
-- `POST /ai/create-quiz-and-upload-questions/{course_code}` - Create mock exam
+### 📝 Enrollments
+- `POST /api/v1/enrollments` - Create new enrollment
+- `GET /api/v1/enrollments` - Get enrollments (filtered by user)
+- `DELETE /api/v1/enrollments/{enrollment_id}` - Delete enrollment
+- `PUT /api/v1/enrollments/update` - Bulk update enrollments
+- `GET /api/v1/enrollment-details` - Get detailed enrollment info
 
-### Quiz System
-- `POST /api/v1/quiz` - Create new quiz
-- `GET /api/v1/quiz/by-user/{user_id}` - Get user's quizzes
+### 🧠 Quiz System
+- `POST /api/v1/quiz/` - Create new quiz
+- `GET /api/v1/quiz/` - List all quizzes
+- `GET /api/v1/quiz/{quiz_id}` - Get specific quiz with questions
+- `PUT /api/v1/quiz/{quiz_id}` - Update quiz details
+- `DELETE /api/v1/quiz/{quiz_id}` - Delete quiz
+- `GET /api/v1/quiz/by-user/{user_id}` - Get quizzes by user
+- `GET /api/v1/quiz/by-user-course/{user_id}/{course_id}` - Get quizzes by user and course
+- `GET /api/v1/quiz/course/{course_id}` - Get quizzes for a course
+- `GET /api/v1/quiz/{quiz_id}/questions` - Get questions for a quiz
+- `POST /api/v1/quiz/{quiz_id}/questions/{question_id}` - Add question to quiz
+- `DELETE /api/v1/quiz/{quiz_id}/questions/{question_id}` - Remove question from quiz
+
+### ❓ Questions Management
+- `POST /api/v1/question/` - Create new question
+- `POST /api/v1/question/bulk-import` - Bulk import questions
+- `GET /api/v1/question/` - List questions with filters
+- `GET /api/v1/question/{question_id}` - Get specific question
+- `PUT /api/v1/question/{question_id}` - Update question
+- `DELETE /api/v1/question/{question_id}` - Delete question
+- `GET /api/v1/question/stats` - Get question statistics
+- `GET /api/v1/question/topics` - Get all available topics
+- `POST /api/v1/question/{question_id}/choices` - Add choices to question
+- `DELETE /api/v1/question/{question_id}/choices/{choice_id}` - Delete choice
+
+### 📋 Answers & Results
 - `POST /api/v1/add-answers` - Submit quiz answers
-- `GET /api/v1/checks/{user_id}/{quiz_id}` - Get answer validation
+- `GET /api/v1/all/answers` - Get all answers (filtered by user/quiz)
+- `GET /api/v1/checks/{user_id}/{quiz_id}` - Get answer validation results
+
+### 🤖 AI-Powered Features
+
+#### Past Papers Management
+- `POST /api/v1/ai/get-papers/{course_code}` - Download past papers for course
+- `GET /api/v1/ai/past-papers/{course_code}` - List available past papers
+- `GET /api/v1/ai/past-papers/{course_code}/{filename}` - Download/view specific paper
+
+#### Question Generation & AI Processing
+- `POST /api/v1/ai/generate-questions-json/{course_code}` - Generate questions from past papers
+- `POST /api/v1/ai/create-quiz-and-upload-questions/{course_code}` - Create complete quiz with AI-generated questions
+- `POST /api/v1/ai/solve-paper` - Get AI assistance for exam problems
+
+#### Answer Checking & Validation
+- `POST /api/v1/ai/complete-answer-check-flow` - Complete answer validation workflow
+- `POST /api/v1/ai/fetch-answers` - Fetch answers for AI processing
+- `POST /api/v1/ai/check-answers-from-file` - AI-powered answer checking
+- `POST /api/v1/ai/upload-checked-answers-from-file` - Upload validated answers
+
+### 📊 Additional Features
+- **Pagination**: Most list endpoints support `limit`, `offset`, and `page` parameters
+- **Filtering**: Courses and questions can be filtered by various criteria
+- **Search**: Full-text search available for courses and questions
+- **File Upload**: Support for PDF uploads and image processing
+- **Real-time Processing**: Background tasks for AI processing
+- **Bulk Operations**: Batch creation and updates for efficiency
+- **No Time Limits**: Quizzes can be created with or without time constraints
 
 ## 🤝 Contributing
 
