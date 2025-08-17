@@ -973,9 +973,13 @@ const MockExam = () => {
                       } catch (error) {
                         console.error("Failed to extract user ID from token:", error);
                       }
+                      
+                      // Calculate the next exam number based on existing mock exams
+                      const examNumber = (mockExams || []).length + 1;
+                      
                       const quizResp = await createQuizAndUploadQuestions({
                         course_code: courseId,
-                        title: `Mock Exam for ${courseId}`,
+                        title: `Mock Exam for ${courseId} (${examNumber})`,
                         course_id: courseUUID,
                         description: "Generated mock exam",
                         topic: "test",
