@@ -12,7 +12,9 @@ import {
   fetchCourseByCode,
   fetchQuizzes,
   generateQuestionsJson,
-  submitAnswer
+  submitAnswer,
+  markAnswers,
+  fetchResults
 } from "../api";
 
 const getPaperMeta = (filename) => {
@@ -86,13 +88,18 @@ const MockExam = () => {
   const [pdfView, setPdfView] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showQuizModal, setShowQuizModal] = useState(false);
+  const [showResultsModal, setShowResultsModal] = useState(false);
   const [selectedMockExamIndex, setSelectedMockExamIndex] = useState(null);
+  const [selectedResultsExam, setSelectedResultsExam] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentResultsQuestionIndex, setCurrentResultsQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [tab, setTab] = useState("pastPapers");
   const [mockExams, setMockExams] = useState(null); // null = loading, [] = empty, [...] = data
   const [generating, setGenerating] = useState(false);
   const [mockError, setMockError] = useState("");
+  const [markingExamId, setMarkingExamId] = useState(null); // Track which exam is being marked
+  const [examResults, setExamResults] = useState({}); // Store results for each exam ID
   const [enrollmentDetails, setEnrollmentDetails] = useState(null);
   const timeLeft =
     useCountdown(enrollmentDetails?.exam_date, enrollmentDetails?.exam_time) ||
@@ -112,16 +119,33 @@ const MockExam = () => {
     console.error("Failed to extract user ID from token:", error);
   }
 
+  // Function to check if exams have results
+  const checkExamResults = async (exams, userId) => {
+    const results = {};
+    for (const exam of exams) {
+      try {
+        const data = await fetchResults(userId, exam.id);
+        // Check if results exist - data should have a 'checks' array with content
+        const hasResults = data && data.checks && Array.isArray(data.checks) && data.checks.length > 0;
+        results[exam.id] = hasResults ? data : null;
+      } catch (err) {
+        // No results found or error - treat as no results
+        results[exam.id] = null;
+      }
+    }
+    setExamResults(results);
+  };
+
   // Prevent background scroll when any modal is open
   useEffect(() => {
-    if (showModal || showQuizModal) {
+    if (showModal || showQuizModal || showResultsModal) {
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
       return () => {
         document.body.style.overflow = originalOverflow;
       };
     }
-  }, [showModal, showQuizModal]);
+  }, [showModal, showQuizModal, showResultsModal]);
 
   const [noPapers, setNoPapers] = useState(false);
   // Use a ref to track if a download is in progress, so tab switches don't reset the state
@@ -247,6 +271,8 @@ const MockExam = () => {
 
         if (!cancelled) {
           setMockExams(mapped);
+          // Check results for each exam after loading
+          checkExamResults(mapped, userId);
         }
       } catch (err) {
         console.warn('Failed to load quizzes', err);
@@ -705,7 +731,7 @@ const MockExam = () => {
                         });
 
                         try {
-                          // call API helper
+                          // Submit answers first
                           await submitAnswer(examToSubmit?.id, userId, answersPayload);
                         } catch (err) {
                           const msg = err?.response?.data?.detail || err?.message || 'Failed to submit answers';
@@ -727,16 +753,154 @@ const MockExam = () => {
                           // ignore
                         }
 
+                        // Close modal immediately after successful submission
                         setShowQuizModal(false);
                         setSelectedMockExamIndex(null);
                         setCurrentQuestionIndex(0);
                         setAnswers([]);
+
+                        // Start marking process in background
+                        setMarkingExamId(examToSubmit?.id);
+                        
+                        try {
+                          // Trigger marking and wait for completion
+                          const markingResult = await markAnswers(userId, examToSubmit?.id);
+                          
+                          // Check if marking was actually successful (not just technically completed)
+                          if (markingResult && markingResult.success && markingResult.checked_answers && Object.keys(markingResult.checked_answers).length === 0) {
+                            console.warn('Marking completed but no answers were checked:', markingResult);
+                            // Still try to fetch results in case they exist from a previous attempt
+                          }
+                          
+                          // Update exam results after successful marking
+                          const resultsData = await fetchResults(userId, examToSubmit?.id);
+                          const hasResults = resultsData && resultsData.checks && Array.isArray(resultsData.checks) && resultsData.checks.length > 0;
+                          setExamResults(prev => ({
+                            ...prev,
+                            [examToSubmit?.id]: hasResults ? resultsData : null
+                          }));
+                          
+                        } catch (err) {
+                          console.error('Failed to mark answers:', err);
+                          // Don't show error to user since modal is closed, just log it
+                        } finally {
+                          // Clear marking state
+                          setMarkingExamId(null);
+                        }
                       }}
                     >
                       Submit Exam
                     </button>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Results Modal - View answers and results */}
+        {showResultsModal && selectedResultsExam && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
+            <div className="relative z-10 w-full max-w-2xl mx-auto rounded-2xl shadow-2xl bg-white dark:bg-gray-900 flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between px-6 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <div className="font-semibold text-gray-800 dark:text-gray-100 truncate">{selectedResultsExam.exam?.name} - Results</div>
+                    <div className="text-xs text-gray-500">
+                      Score: {selectedResultsExam.results?.checks?.filter(check => check.result === 'correct').length || 0}/{selectedResultsExam.results?.checks?.length || 0}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-sm text-gray-600 dark:text-gray-300">
+                    Question {Math.min(currentResultsQuestionIndex + 1, selectedResultsExam.results?.checks?.length || 0)} / {selectedResultsExam.results?.checks?.length || 0}
+                  </div>
+                  <button
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200/80 dark:bg-gray-700/80 hover:bg-red-500 hover:text-white transition-colors text-gray-700 dark:text-gray-200 shadow"
+                    onClick={() => {
+                      setShowResultsModal(false);
+                      setSelectedResultsExam(null);
+                      setCurrentResultsQuestionIndex(0);
+                    }}
+                    aria-label="Close Results"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 flex-1 flex flex-col gap-4">
+                {selectedResultsExam.results?.checks && selectedResultsExam.results.checks[currentResultsQuestionIndex] && (
+                  <>
+                    {/* Question Text */}
+                    <div className="text-gray-800 dark:text-gray-100 text-lg">
+                      {selectedResultsExam.results.checks[currentResultsQuestionIndex]?.question || 'Question not available.'}
+                    </div>
+
+                    {/* Result Status */}
+                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium w-fit ${
+                      selectedResultsExam.results.checks[currentResultsQuestionIndex]?.result === 'correct' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                    }`}>
+                      {selectedResultsExam.results.checks[currentResultsQuestionIndex]?.result === 'correct' ? (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      )}
+                      {selectedResultsExam.results.checks[currentResultsQuestionIndex]?.result === 'correct' ? 'Correct' : 'Incorrect'}
+                    </div>
+
+                    {/* Your Answer */}
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">Your Answer:</h3>
+                      <p className="text-gray-800 dark:text-gray-200">
+                        {selectedResultsExam.results.checks[currentResultsQuestionIndex]?.userAnswer || 'No answer provided'}
+                      </p>
+                    </div>
+
+                    {/* Model Answer */}
+                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                      <h3 className="font-semibold text-green-800 dark:text-green-200 mb-2">Model Answer:</h3>
+                      <p className="text-gray-800 dark:text-gray-200">
+                        {selectedResultsExam.results.checks[currentResultsQuestionIndex]?.realAnswer || 'No model answer available'}
+                      </p>
+                    </div>
+
+                    {/* Navigation */}
+                    <div className="flex items-center justify-between mt-auto">
+                      <div className="flex gap-2">
+                        <button
+                          className={`btn btn-sm ${currentResultsQuestionIndex === 0 ? 'btn-disabled' : 'btn-outline'}`}
+                          onClick={() => setCurrentResultsQuestionIndex((i) => Math.max(0, i - 1))}
+                          disabled={currentResultsQuestionIndex === 0}
+                        >
+                          Previous
+                        </button>
+                        <button
+                          className={`btn btn-sm ${currentResultsQuestionIndex === (selectedResultsExam.results?.checks?.length || 1) - 1 ? 'btn-disabled' : 'btn-outline'}`}
+                          onClick={() => setCurrentResultsQuestionIndex((i) => Math.min((selectedResultsExam.results?.checks?.length || 1) - 1, i + 1))}
+                          disabled={currentResultsQuestionIndex === (selectedResultsExam.results?.checks?.length || 1) - 1}
+                        >
+                          Next
+                        </button>
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {Math.round(((selectedResultsExam.results?.checks?.filter(check => check.result === 'correct').length || 0) / (selectedResultsExam.results?.checks?.length || 1)) * 100)}% Score
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -890,39 +1054,75 @@ const MockExam = () => {
                       Generated: {exam.date}
                     </div>
                     <div className="mt-auto flex gap-2">
-                      <button
-                        className="btn btn-sm btn-outline"
-                        onClick={() => {
-                          // Open quiz modal for this exam
-                          setSelectedMockExamIndex(idx);
-                          setCurrentQuestionIndex(0);
-                          // initialize answers array with nulls for unanswered
-                          const qlen = exam.questions?.length || 0;
-                          // try to load saved answers from localStorage for this exam
-                          let loaded = null;
-                          try {
-                            const raw = localStorage.getItem(autosaveKey(exam.id));
-                            if (raw) loaded = JSON.parse(raw);
-                          } catch (e) {
-                            loaded = null;
-                          }
-                          setAnswers(Array(qlen).fill(null).map((v, i) => (loaded && typeof loaded[i] !== 'undefined' ? loaded[i] : null)));
-                          setShowQuizModal(true);
-                        }}
-                      >
-                        View
-                      </button>
-                      <button
-                        className={`btn btn-sm ${exam.submitted ? 'btn-success' : 'btn-ghost'}`}
-                        onClick={() => {
-                          // quick toggle mark as complete locally
-                          const copy = [...mockExams];
-                          copy[idx] = { ...copy[idx], submitted: !copy[idx].submitted };
-                          setMockExams(copy);
-                        }}
-                      >
-                        {exam.submitted ? 'Submitted' : 'Mark'}
-                      </button>
+                      {/* Dynamic button based on results status and marking state */}
+                      {markingExamId === exam.id ? (
+                        // Currently being marked - show loading state
+                        <button
+                          className="btn btn-sm btn-warning"
+                          disabled
+                        >
+                          <span className="flex items-center gap-2">
+                            <svg
+                              className="animate-spin h-4 w-4"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                                fill="none"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v8z"
+                              />
+                            </svg>
+                            Marking your test...
+                          </span>
+                        </button>
+                      ) : examResults[exam.id] ? (
+                        // Has results - show View Results button
+                        <button
+                          className="btn btn-sm btn-success"
+                          onClick={() => {
+                            setSelectedResultsExam({
+                              exam: exam,
+                              results: examResults[exam.id]
+                            });
+                            setCurrentResultsQuestionIndex(0);
+                            setShowResultsModal(true);
+                          }}
+                        >
+                          View Results
+                        </button>
+                      ) : (
+                        // No results - show Take Test button
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => {
+                            setSelectedMockExamIndex(idx);
+                            setCurrentQuestionIndex(0);
+                            // initialize answers array with nulls for unanswered
+                            const qlen = exam.questions?.length || 0;
+                            // try to load saved answers from localStorage for this exam
+                            let loaded = null;
+                            try {
+                              const raw = localStorage.getItem(autosaveKey(exam.id));
+                              if (raw) loaded = JSON.parse(raw);
+                            } catch (e) {
+                              loaded = null;
+                            }
+                            setAnswers(Array(qlen).fill(null).map((v, i) => (loaded && typeof loaded[i] !== 'undefined' ? loaded[i] : null)));
+                            setShowQuizModal(true);
+                          }}
+                        >
+                          Take Test
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
