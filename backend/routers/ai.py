@@ -600,8 +600,22 @@ async def solve_paper(payload: dict):
         """
     ).strip()
 
-    # Prefer OpenAI for fast, reliable chat if API key is present. If not, go straight to local.
+    # Use OpenRouter by default, fallback to OpenAI if configured, then local model as last resort
     def llm_chat(system_prompt: str, user_prompt: str, image_b64: str | None = None):
+        # Try OpenRouter first (unless configured to use local first)
+        if not LLM_USE_LOCAL_FIRST:
+            try:
+                return openrouter_chat(system_prompt, user_prompt, image_b64)
+            except Exception as e:
+                print(f"OpenRouter call failed: {e}")
+        
+        # If OpenRouter fails or LLM_USE_LOCAL_FIRST=true, try local model
+        if LLM_USE_LOCAL_FIRST:
+            local_answer = _local_generate(system_prompt, user_prompt)
+            if local_answer:
+                return local_answer
+        
+        # If local failed/skipped and OpenAI configured, try that
         if OPENAI_API_KEY:
             try:
                 headers = {"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"}
@@ -622,12 +636,13 @@ async def solve_paper(payload: dict):
             except requests.RequestException as e:
                 print(f"OpenAI call failed: {e}")
         
-        # No OpenAI key or OpenAI failed - try local model directly
-        local_answer = _local_generate(system_prompt, user_prompt)
-        if local_answer:
-            return local_answer
+        # If we haven't tried local yet, try it now
+        if not LLM_USE_LOCAL_FIRST:
+            local_answer = _local_generate(system_prompt, user_prompt)
+            if local_answer:
+                return local_answer
         
-        # Final degraded fallback if local also fails
+        # Final degraded fallback if everything else fails
         return _degraded_local_answer(user_prompt)
 
     # Call with correct keyword matching llm_chat parameter (image_b64)
