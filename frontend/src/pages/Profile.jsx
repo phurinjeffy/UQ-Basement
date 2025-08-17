@@ -35,11 +35,13 @@ function Profile() {
 
         // Fetch user enrollments
         const enrollmentsRes = await getUserEnrollments(userId);
+        console.log("Enrollments response:", enrollmentsRes);
         setEnrollments(enrollmentsRes.enrollments || []);
 
         // Fetch user quizzes
         const quizzesRes = await getUserQuizzes(userId);
-        setQuizzes(quizzesRes.data || []);
+        console.log("Quizzes response:", quizzesRes);
+        setQuizzes(quizzesRes.data?.quizzes || []);
 
         setLoading(false);
       } catch (err) {
@@ -129,9 +131,9 @@ function Profile() {
         </div>
 
         {/* Courses List */}
-        {enrollments.length > 0 && (
-          <div className="w-full mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">Enrolled Courses</h3>
+        <div className="w-full mb-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-3">Enrolled Courses</h3>
+          {enrollments.length > 0 ? (
             <div className="space-y-2">
               {enrollments.map((enrollment, index) => (
                 <div key={index} className="bg-gray-50 rounded-lg p-3 text-sm">
@@ -150,13 +152,17 @@ function Profile() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
+              No courses enrolled yet
+            </div>
+          )}
+        </div>
 
         {/* Recent Exams */}
-        {quizzes.length > 0 && (
-          <div className="w-full mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">Recent Exams</h3>
+        <div className="w-full mb-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-3">Recent Exams</h3>
+          {quizzes.length > 0 ? (
             <div className="space-y-2">
               {quizzes.slice(0, 5).map((quiz, index) => (
                 <div key={index} className="bg-gray-50 rounded-lg p-3 text-sm">
@@ -170,8 +176,12 @@ function Profile() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
+              No exams taken yet
+            </div>
+          )}
+        </div>
 
         {/* Action Buttons */}
         <div className="w-full space-y-3">
