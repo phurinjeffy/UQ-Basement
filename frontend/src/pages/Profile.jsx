@@ -53,14 +53,20 @@ function Profile() {
 
   if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <p className="text-gray-600">Loading your profile...</p>
+        </div>
       </div>
     );
   if (error)
     return (
-      <div className="min-h-screen flex items-center justify-center text-red-500">
-        {error}
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-xl mb-4">⚠️</div>
+          <p className="text-red-600 font-medium">{error}</p>
+        </div>
       </div>
     );
   if (!user) return null;
@@ -68,19 +74,55 @@ function Profile() {
   // Use email prefix as display name
   const displayName = user && user.email ? user.email.split("@")[0] : "User";
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-base-200 px-4 py-10">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-10 max-w-lg w-full flex flex-col items-center">
-        <div className="w-32 h-32 rounded-full bg-blue-600 dark:bg-blue-400 flex items-center justify-center text-5xl font-bold text-white mb-6">
-          {displayName[0]}
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col items-center justify-center px-4 py-10">
+      <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-xl border border-white/20 p-10 max-w-lg w-full flex flex-col items-center animate-fadeInUp">
+        {/* Profile Avatar */}
+        <div className="relative mb-8">
+          <div className="w-32 h-32 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-5xl font-bold text-white shadow-lg">
+            {displayName[0].toUpperCase()}
+          </div>
+          <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center">
+            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
         </div>
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-          {displayName}
-        </h2>
-        <div className="text-gray-500 dark:text-gray-400 mb-1">
-          Email: <span className="font-mono">{user.email}</span>
+
+        {/* Profile Info */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-3">
+            {displayName}
+          </h2>
+          <div className="bg-gray-50 rounded-lg p-3 inline-block">
+            <div className="text-sm text-gray-500 mb-1">Email Address</div>
+            <div className="font-mono text-gray-800">{user.email}</div>
+          </div>
         </div>
-        <div className="w-full mt-4 flex flex-col items-center">
-          <button className="btn btn-error" onClick={handleDelete}>
+
+        {/* Profile Stats */}
+        <div className="grid grid-cols-2 gap-4 w-full mb-8">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-indigo-600">0</div>
+            <div className="text-sm text-gray-600">Courses</div>
+          </div>
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-purple-600">0</div>
+            <div className="text-sm text-gray-600">Exams Taken</div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="w-full space-y-3">
+          <button
+            className="w-full py-3 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transform hover:scale-[1.02] transition-all duration-200 shadow-lg"
+            onClick={() => navigate('/dashboard')}
+          >
+            Go to Dashboard
+          </button>
+          <button
+            className="w-full py-3 px-6 bg-red-500 text-white rounded-xl font-semibold hover:bg-red-600 transform hover:scale-[1.02] transition-all duration-200 shadow-lg"
+            onClick={handleDelete}
+          >
             Delete Account
           </button>
         </div>
