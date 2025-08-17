@@ -973,18 +973,36 @@ const MockExam = () => {
                       } catch (error) {
                         console.error("Failed to extract user ID from token:", error);
                       }
+                      // Generate unique mock exam name
+                      const examNumber = (mockExams?.length || 0) + 1;
+                      const currentDate = new Date();
+                      const dateString = currentDate.toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        year: 'numeric' 
+                      });
+                      const timeString = currentDate.toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        hour12: false 
+                      });
+                      
+                      const uniqueTitle = `${courseId} Mock Exam #${examNumber} - ${dateString} ${timeString}`;
+                      
                       const quizResp = await createQuizAndUploadQuestions({
                         course_code: courseId,
-                        title: `Mock Exam for ${courseId}`,
+                        title: uniqueTitle,
                         course_id: courseUUID,
-                        description: "Generated mock exam",
-                        topic: "test",
+                        description: `Generated mock exam #${examNumber} for ${courseId}`,
+                        topic: "comprehensive-review",
                         time_limit: 60,
                         user_id: userId,
                       });
                       console.log("Quiz API response:", quizResp);
                       if (quizResp && quizResp.quiz) {
                         setMockExams([...(mockExams || []), quizResp.quiz]);
+                        // Refresh the page after successful generation
+                        window.location.reload();
                       } else if (
                         quizResp &&
                         quizResp.success === false &&
