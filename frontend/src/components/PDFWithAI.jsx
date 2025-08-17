@@ -36,7 +36,7 @@ export default function PDFWithAI({ url }) {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiAnswer, setAiAnswer] = useState('');
   const [error, setError] = useState('');
-  const [scale, setScale] = useState(0.6);
+  const [scale, setScale] = useState(1.0);
   const [viewerHeight, setViewerHeight] = useState(null); // CSS pixel height of rendered PDF page
 
   // Load + render page
@@ -156,40 +156,82 @@ export default function PDFWithAI({ url }) {
   const disableNext = pageNumber >= numPages || loading;
 
   return (
-    <div className="flex w-full h-full">
-      <div className="flex-1 overflow-auto p-4 bg-gray-50 dark:bg-gray-900">
-        <div className="flex items-center gap-3 mb-3 flex-wrap">
-          <button className="btn btn-sm" disabled={disablePrev} onClick={() => setPageNumber(p => Math.max(1, p - 1))}>Prev</button>
-          <span className="text-sm">Page {pageNumber}{numPages ? ` / ${numPages}` : ''}</span>
-          <button className="btn btn-sm" disabled={disableNext} onClick={() => setPageNumber(p => Math.min(numPages, p + 1))}>Next</button>
-          <div className="ml-4 flex items-center gap-1">
-            <button className="btn btn-sm" onClick={() => setScale(s => Math.max(0.5, s - 0.1))}>-</button>
-            <span className="text-xs w-10 text-center">{(scale*100).toFixed(0)}%</span>
-            <button className="btn btn-sm" onClick={() => setScale(s => Math.min(2.0, s + 0.1))}>+</button>
+    <div className="flex w-full h-full bg-gray-100 dark:bg-gray-900">
+      {/* Main Container */}
+      <div className="flex flex-row gap-4 w-full h-full">
+        {/* PDF Viewer Section */}
+        <div className="flex flex-col flex-grow min-w-0">
+          {/* Controls */}
+          <div className="flex items-center justify-between gap-4 mb-2 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+            <div className="flex items-center gap-3">
+              <button className="btn btn-primary btn-sm" disabled={disablePrev} onClick={() => setPageNumber(p => Math.max(1, p - 1))}>
+                Previous
+              </button>
+              <span className="text-sm font-medium">Page {pageNumber}{numPages ? ` of ${numPages}` : ''}</span>
+              <button className="btn btn-primary btn-sm" disabled={disableNext} onClick={() => setPageNumber(p => Math.min(numPages, p + 1))}>
+                Next
+              </button>
+            </div>
+            <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 px-3 py-1 rounded-md">
+              <button className="btn btn-circle btn-sm btn-ghost" onClick={() => setScale(s => Math.max(0.5, s - 0.1))}>-</button>
+              <span className="text-sm font-medium min-w-[3rem] text-center">{(scale*100).toFixed(0)}%</span>
+              <button className="btn btn-circle btn-sm btn-ghost" onClick={() => setScale(s => Math.min(2.0, s + 0.1))}>+</button>
+            </div>
+          </div>
+          {/* PDF Viewer */}
+          <div className="flex-1 relative bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-auto">
+            <div className="absolute inset-0 flex items-start justify-center p-4">
+              {loading && <div className="p-10 text-lg">Loading PDF...</div>}
+              {error && !loading && <div className="p-4 text-red-500">{error}</div>}
+              <canvas 
+                ref={canvasRef} 
+                className="max-w-full"
+                style={{ 
+                  display: loading ? 'none' : 'block',
+                  margin: '0 auto',
+                  height: 'auto'
+                }} 
+              />
+            </div>
           </div>
         </div>
-        <div className="relative flex justify-center items-center border rounded bg-white dark:bg-gray-800 shadow max-w-full overflow-auto h-[600px]">
-          {loading && <div className="p-10 text-sm">Loading...</div>}
-          {error && !loading && <div className="p-4 text-red-500 text-sm">{error}</div>}
-          <canvas ref={canvasRef} style={{ display: loading ? 'none' : 'block', maxWidth: '100%', height: 'auto' }} />
-        </div>
-      </div>
-      <div className="w-80 border-l flex flex-col bg-white dark:bg-gray-800">
-        <div className="p-3 border-b">
-          <button className="btn btn-sm btn-primary w-full" onClick={handleAskAI} disabled={aiLoading || extracting || loading}>
-            {aiLoading ? 'Thinking...' : 'Ask AI'}
-          </button>
-        </div>
-        <div className="p-3 overflow-y-auto text-sm whitespace-pre-wrap h-[600px]">
-          {aiLoading ? (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <span className="loading loading-bars loading-xl mb-2"></span>
-              <div className="text-gray-600 dark:text-gray-300">
-                <p className="mb-2">This might take a while...</p>
-                <p className="text-xs opacity-75">Have you tried solving it yourself? 🤔</p>
+
+        {/* AI Assistant Panel */}
+        <div className="w-[380px] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+          <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+            <button 
+              className="btn btn-primary w-full h-10 text-base font-medium" 
+              onClick={handleAskAI} 
+              disabled={aiLoading || extracting || loading}
+            >
+              {aiLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="loading loading-spinner loading-sm"></span>
+                  Thinking...
+                </span>
+              ) : 'Ask AI Assistant'}
+            </button>
+          </div>
+          <div className="flex-1 p-4 overflow-y-auto">
+            {aiLoading ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <span className="loading loading-bars loading-lg mb-4"></span>
+                <div className="text-gray-600 dark:text-gray-300">
+                  <p className="text-lg mb-2">Analyzing the content...</p>
+                  <p className="text-sm opacity-75">Have you tried solving it yourself? 🤔</p>
+                </div>
               </div>
-            </div>
-          ) : (aiAnswer || 'Use the Ask AI button above to get help with the current page.')}
+            ) : (
+              <div className="prose dark:prose-invert max-w-none">
+                {aiAnswer || (
+                  <div className="text-gray-500 dark:text-gray-400">
+                    <p className="text-lg">Welcome to AI Assistant! 👋</p>
+                    <p>Click the button above to get help understanding this page.</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
