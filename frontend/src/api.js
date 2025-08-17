@@ -164,3 +164,23 @@ export async function submitAnswer(quizId, userId, answers) {
     });
     return res.data;
 }
+
+export async function markAnswers(userId, quizId) {
+    try {
+        const res = await axios.post(`${API_BASE}/ai/complete-answer-check-flow?user_id=${userId}&quiz_id=${quizId}`);
+        return res.data;
+    } catch (err) {
+        console.error("Error marking quiz:", err.response?.data || err);
+        throw err;
+    }
+}
+
+export async function fetchResults(userId, quizId) {
+    try {
+        const res = await axios.get(`${API_BASE}/checks/${userId}/${quizId}`);
+        return res.data;
+    } catch (err) {
+        console.error("Error fetching results:", err.response?.data || err);
+        throw err;
+    }
+}   
