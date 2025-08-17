@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { fetchUserProfile, deleteUser } from "../api";
+import { fetchUserProfile, deleteUser, getUserEnrollments, getUserQuizzes } from "../api";
 import { useNavigate } from "react-router-dom";
 
 function Profile() {
   const [user, setUser] = useState(null);
+  const [enrollments, setEnrollments] = useState([]);
+  const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -24,15 +26,32 @@ function Profile() {
       navigate("/", { replace: true });
       return;
     }
-    fetchUserProfile(userId)
-      .then((res) => {
-        setUser(res.user);
+
+    const fetchProfileData = async () => {
+      try {
+        // Fetch user profile
+        const userRes = await fetchUserProfile(userId);
+        setUser(userRes.user);
+
+        // Fetch user enrollments
+        const enrollmentsRes = await getUserEnrollments(userId);
+        console.log("Enrollments response:", enrollmentsRes);
+        setEnrollments(enrollmentsRes.enrollments || []);
+
+        // Fetch user quizzes
+        const quizzesRes = await getUserQuizzes(userId);
+        console.log("Quizzes response:", quizzesRes);
+        setQuizzes(quizzesRes.data?.quizzes || []);
+
         setLoading(false);
-      })
-      .catch((err) => {
-        setError("Failed to load profile");
+      } catch (err) {
+        console.error("Error fetching profile data:", err);
+        setError("Failed to load profile data");
         setLoading(false);
-      });
+      }
+    };
+
+    fetchProfileData();
   }, [navigate]);
 
   const handleDelete = async () => {
@@ -102,13 +121,66 @@ function Profile() {
         {/* Profile Stats */}
         <div className="grid grid-cols-2 gap-4 w-full mb-8">
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl p-4 text-center border border-blue-100 dark:border-blue-800/50">
-            <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">0</div>
+            <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{enrollments.length}</div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Courses</div>
           </div>
           <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-xl p-4 text-center border border-purple-100 dark:border-purple-800/50">
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">0</div>
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{quizzes.length}</div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Exams Taken</div>
           </div>
+        </div>
+
+        {/* Courses List */}
+        <div className="w-full mb-6">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Enrolled Courses</h3>
+          {enrollments.length > 0 ? (
+            <div className="space-y-2">
+              {enrollments.map((enrollment, index) => (
+                <div key={index} className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-3 text-sm border border-gray-100 dark:border-slate-600/50">
+                  <div className="font-medium text-gray-800 dark:text-gray-200">
+                    {enrollment.course?.name || 'Unknown Course'}
+                  </div>
+                  <div className="text-gray-600 dark:text-gray-400">
+                    {enrollment.course?.course_title || 'No title available'}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    {enrollment.semester} {enrollment.year}
+                    {enrollment.exam_date && (
+                      <span className="ml-2">• Exam: {enrollment.exam_date}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 text-center text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-slate-600/50">
+              No courses enrolled yet
+            </div>
+          )}
+        </div>
+
+        {/* Recent Exams */}
+        <div className="w-full mb-6">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Recent Exams</h3>
+          {quizzes.length > 0 ? (
+            <div className="space-y-2">
+              {quizzes.slice(0, 5).map((quiz, index) => (
+                <div key={index} className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-3 text-sm border border-gray-100 dark:border-slate-600/50">
+                  <div className="font-medium text-gray-800 dark:text-gray-200">{quiz.title}</div>
+                  <div className="text-gray-600 dark:text-gray-400">{quiz.description || 'Mock Exam'}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    {quiz.topic && <span>Topic: {quiz.topic} • </span>}
+                    {quiz.questions?.length || 0} questions
+                    {quiz.time_limit && <span> • {quiz.time_limit} mins</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 text-center text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-slate-600/50">
+              No exams taken yet
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}

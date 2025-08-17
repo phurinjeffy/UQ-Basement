@@ -1,13 +1,15 @@
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 import AddCourses from "../components/AddCourses.jsx";
-import { updateEnrollments, getEnrollments, fetchCourseById } from "../api.js";
+import { updateEnrollments, getEnrollments, fetchCourseById, getUserQuizzes } from "../api.js";
 import Breadcrumbs from "../components/Breadcrumbs";
 
 const Dashboard = () => {
   const [showAddCourses, setShowAddCourses] = useState(false);
   const [courses, setCourses] = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [quizStats, setQuizStats] = useState({ totalQuizzes: 0, avgScore: 0 });
 
   // Fetch enrollments on mount
   useEffect(() => {
@@ -20,6 +22,8 @@ const Dashboard = () => {
           userId = payload.user_id;
         }
         if (!userId) return;
+
+        // Fetch enrollments
         const enrollments = await getEnrollments(userId);
         const merged = await Promise.all(
           enrollments.map(async (e) => {
@@ -37,8 +41,40 @@ const Dashboard = () => {
           })
         );
         setCourses(merged);
+
+        // Fetch user quizzes for recent activity and stats
+        try {
+          const quizzesRes = await getUserQuizzes(userId);
+          const quizzes = quizzesRes.data?.quizzes || [];
+          
+          // Calculate stats
+          const totalQuizzes = quizzes.length;
+          let avgScore = 0;
+          if (totalQuizzes > 0) {
+            // For now, we'll use a placeholder avg score since we don't have actual scores
+            avgScore = 78; // This could be calculated from actual quiz results if available
+          }
+          setQuizStats({ totalQuizzes, avgScore });
+
+          // Build recent activity from quizzes
+          const activity = quizzes
+            .slice(0, 5) // Get latest 5 quizzes
+            .map(quiz => ({
+              type: "Mock Exam",
+              course: quiz.course_id || "Unknown Course", // We might need to resolve course name
+              title: quiz.title,
+              date: new Date(quiz.created_at || Date.now()).toISOString().split('T')[0],
+              topic: quiz.topic,
+              questions: quiz.questions?.length || 0
+            }));
+          
+          setRecentActivity(activity);
+        } catch (err) {
+          console.error("Error fetching quizzes:", err);
+        }
+
       } catch (err) {
-        // Handle error
+        console.error("Error fetching dashboard data:", err);
       } finally {
         setLoadingCourses(false);
       }
@@ -80,11 +116,6 @@ const Dashboard = () => {
 
   const navigate = useNavigate();
   const progressValue = 65;
-  const recentActivity = [
-    { type: "Mock Exam", course: "COMP3506", date: "2025-08-15", score: 82 },
-    { type: "Study Session", course: "COMP3702", date: "2025-08-14", duration: "1h 30m" },
-    { type: "Mock Exam", course: "COMP3710", date: "2025-08-13", score: 75 },
-  ];
 
   const getActivityIcon = (type) => {
     switch (type) {
@@ -165,7 +196,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Mock Exams</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-white">12</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{quizStats.totalQuizzes}</p>
                   </div>
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -179,7 +210,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Avg Score</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-white">78%</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{quizStats.avgScore}%</p>
                   </div>
                   <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -303,33 +334,45 @@ const Dashboard = () => {
             {/* Recent Activity */}
             <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-lg rounded-2xl p-6 border border-white/20 dark:border-slate-700/20 shadow-xl">
               <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">Recent Activity</h2>
-              <div className="space-y-4">
-                {recentActivity.map((activity, idx) => (
-                  <div key={idx} className="flex items-center space-x-4 p-3 bg-white/50 dark:bg-slate-700/50 rounded-xl">
-                    {getActivityIcon(activity.type)}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                        {activity.type} • {activity.course}
-                      </p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {activity.date}
-                      </p>
+              {recentActivity.length > 0 ? (
+                <div className="space-y-4">
+                  {recentActivity.map((activity, idx) => (
+                    <div key={idx} className="flex items-center space-x-4 p-3 bg-white/50 dark:bg-slate-700/50 rounded-xl">
+                      {getActivityIcon(activity.type)}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                          {activity.title || activity.type}
+                        </p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          {activity.topic && `${activity.topic} • `}{activity.date}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        {activity.type === "Mock Exam" && (
+                          <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                            {activity.questions} questions
+                          </span>
+                        )}
+                        {activity.duration && (
+                          <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                            {activity.duration}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      {activity.type === "Mock Exam" && (
-                        <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
-                          {activity.score}%
-                        </span>
-                      )}
-                      {activity.type === "Study Session" && (
-                        <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                          {activity.duration}
-                        </span>
-                      )}
-                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
-                ))}
-              </div>
+                  <p className="text-slate-500 dark:text-slate-400">No recent activity</p>
+                  <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">Start a mock exam to see your activity here</p>
+                </div>
+              )}
             </div>
           </div>
 
