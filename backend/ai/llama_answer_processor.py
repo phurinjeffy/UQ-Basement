@@ -15,7 +15,7 @@ elif hasattr(sys.stdout, 'buffer'):
 
 OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
-MODEL_NAME = "meta-llama/llama-3.2-3b-instruct:free"
+MODEL_NAME = "qwen/qwen3-coder:free"
 
 def safe_print(text):
     """Print text safely, handling encoding issues"""
