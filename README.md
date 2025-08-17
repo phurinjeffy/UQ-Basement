@@ -4,6 +4,9 @@
 
 UQ-Basement is an intelligent web application that revolutionizes exam preparation by automatically generating mock exams from past papers using AI. Built for the UQCS Hackathon 2025, it provides UQ students with personalized practice exams, AI-powered answer checking, and comprehensive study tools.
 
+<img width="1917" height="926" alt="image" src="https://github.com/user-attachments/assets/c7d34318-b938-4c59-a257-0f5c6d8e05cd" />
+
+
 ## 🌟 Features
 
 ### 📚 Past Papers Management
