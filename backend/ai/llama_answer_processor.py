@@ -4,10 +4,27 @@ load_dotenv()
 import os
 import json
 import requests
+import sys
+
+# Set stdout encoding to UTF-8 to handle Unicode characters
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+elif hasattr(sys.stdout, 'buffer'):
+    import codecs
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
 
 OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 MODEL_NAME = "meta-llama/llama-3.2-3b-instruct:free"
+
+def safe_print(text):
+    """Print text safely, handling encoding issues"""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        # Fallback: encode to ASCII with error replacement
+        safe_text = text.encode('ascii', errors='replace').decode('ascii')
+        print(safe_text)
 
 
 def openrouter_chat(prompt):
@@ -55,12 +72,12 @@ def check_answers_with_ai(input_json, output_filename="checked_answers.json"):
         prompt += f"\nID: {a.get('id', '')}\nQuestion: {a.get('question', '')}\nUser Answer: {a.get('user_answer', '')}\nUser ID: {a.get('user_id', '')}\nQuiz ID: {a.get('quiz_id', '')}"
     print(f"Sending {len(answers)} answers to AI for checking...")
     response = openrouter_chat(prompt)
-    print("Raw AI response:")
-    print(response)
+    safe_print("Raw AI response:")
+    safe_print(response)
     # Clean and parse response
     cleaned = response.replace("```json", "").replace("```", "").strip()
-    print("Cleaned AI response:")
-    print(cleaned)
+    safe_print("Cleaned AI response:")
+    safe_print(cleaned)
     import re
 
     match = re.search(r"\[.*\]", cleaned, re.DOTALL)
@@ -70,8 +87,8 @@ def check_answers_with_ai(input_json, output_filename="checked_answers.json"):
         json_str.replace("“", '"').replace("”", '"').replace("‘", '"').replace("’", '"')
     )
     json_str = re.sub(r",\s*([}\]])", r"\1", json_str)  # Remove trailing commas
-    print("JSON string to be parsed:")
-    print(json_str)
+    safe_print("JSON string to be parsed:")
+    safe_print(json_str)
     try:
         result = json.loads(json_str)
         # Post-process to ensure result is 'correct' or 'wrong'

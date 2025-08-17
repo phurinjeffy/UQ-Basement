@@ -18,6 +18,120 @@ router = APIRouter()
 # Always use project root for past_papers dir
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+@router.post("/ai/complete-answer-check-flow")
+async def complete_answer_check_flow(user_id: str = Query(...), quiz_id: str = Query(...)):
+    """
+    Complete flow: fetch answers -> check with AI -> upload to Supabase.
+    Combines fetch_answers, check_answers_from_file, and upload_checked_answers_to_supabase.
+    """
+    try:
+        # Step 1: Fetch answers and save to user_answers.json
+        print(f"Step 1: Fetching answers for user {user_id}, quiz {quiz_id}")
+        url = "http://localhost:8000/api/v1/all/answers"
+        params = {"user_id": user_id, "quiz_id": quiz_id}
+
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(url, params=params)
+
+        if resp.status_code != 200:
+            return {"success": False, "error": f"Failed to fetch answers: {resp.status_code} {resp.text}", "step": 1}
+
+        try:
+            answers_json = resp.json()
+        except Exception as json_error:
+            return {
+                "success": False, 
+                "error": f"Invalid JSON response from answers endpoint: {str(json_error)}", 
+                "step": 1,
+                "raw_response": resp.text[:500]  # First 500 chars for debugging
+            }
+        
+        # Ensure {"answers": [...]} structure
+        if isinstance(answers_json, dict) and "answers" in answers_json:
+            output = answers_json
+        else:
+            output = {"answers": answers_json}
+
+        # Save to user_answers.json
+        json_path = os.path.join(PROJECT_ROOT, "user_answers.json")
+        try:
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(output, f, ensure_ascii=True, indent=2)  # Use ensure_ascii=True to avoid encoding issues
+        except Exception as write_error:
+            return {"success": False, "error": f"Failed to write user_answers.json: {str(write_error)}", "step": 1}
+
+        print(f"Step 1 complete: Saved {len(output.get('answers', []))} answers to user_answers.json")
+
+        # Step 2: Check answers with AI
+        print("Step 2: Checking answers with AI...")
+        input_path = os.path.join(PROJECT_ROOT, "user_answers.json")
+        if not os.path.exists(input_path):
+            return {"success": False, "error": "user_answers.json not found after step 1", "step": 2}
+        
+        proc = subprocess.run(
+            [sys.executable, os.path.join(PROJECT_ROOT, "ai/llama_answer_processor.py"), input_path],
+            capture_output=True,
+            timeout=600,
+        )
+        stdout = proc.stdout.decode()
+        stderr = proc.stderr.decode()
+        
+        checked_path = os.path.join(PROJECT_ROOT, "checked_answers.json")
+        if proc.returncode != 0 or not os.path.exists(checked_path):
+            return {
+                "success": False,
+                "error": "AI answer checking failed or output not found",
+                "step": 2,
+                "stdout": stdout,
+                "stderr": stderr
+            }
+
+        print("Step 2 complete: AI checking finished")
+
+        # Step 3: Upload checked answers to Supabase
+        print("Step 3: Uploading checked answers to Supabase...")
+        ok, msg = upload_checked_answers_to_supabase(checked_path)
+        
+        if not ok:
+            return {"success": False, "error": f"Upload failed: {msg}", "step": 3}
+
+        print("Step 3 complete: Upload successful")
+
+        # Load the final checked answers for return
+        try:
+            with open(checked_path, "r", encoding="utf-8", errors="replace") as f:
+                checked = json.load(f)
+        except UnicodeDecodeError:
+            # Try with different encodings
+            try:
+                with open(checked_path, "r", encoding="latin-1") as f:
+                    checked = json.load(f)
+            except Exception:
+                with open(checked_path, "rb") as f:
+                    content = f.read().decode("utf-8", errors="replace")
+                    checked = json.loads(content)
+
+        # Clean up temporary files
+        try:
+            if os.path.exists(json_path):
+                os.remove(json_path)
+            if os.path.exists(checked_path):
+                os.remove(checked_path)
+        except Exception as e:
+            print(f"Warning: Could not clean up temp files: {e}")
+
+        return {
+            "success": True,
+            "message": f"Complete flow successful. {msg}",
+            "checked_answers": checked,
+            "ai_stdout": stdout,
+            "steps_completed": 3
+        }
+
+    except Exception as e:
+        return {"success": False, "error": str(e), "step": "unknown"}
+
+
 @router.post("/ai/fetch-answers")
 async def fetch_answers(user_id: str = Query(...), quiz_id: str = Query(...)):
     """
