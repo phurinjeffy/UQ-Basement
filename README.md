@@ -23,6 +23,7 @@ UQ-Basement is an intelligent web application that revolutionizes exam preparati
 - **Answer Validation**: AI-powered answer checking with detailed feedback
 
 ### 📋 Quiz System
+<img width="2866" height="1485" alt="image" src="https://github.com/user-attachments/assets/79594137-8d56-4e21-8344-d48afb2023c0" />
 - **Interactive Interface**: Clean, responsive quiz interface with progress tracking
 - **Auto-save**: Automatic saving of answers to prevent data loss
 - **AI-Powered Autograder**: Automatic and intelligent scoring of responses
