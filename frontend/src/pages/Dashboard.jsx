@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 import AddCourses from "../components/AddCourses.jsx";
-import { updateEnrollments, getEnrollments, fetchCourseById, getUserQuizzes, getUserExamStats } from "../api.js";
+import { updateEnrollments, getEnrollments, fetchCourseById, getUserQuizzes, getUserExamStats, getAvailableQuizzes } from "../api.js";
 import Breadcrumbs from "../components/Breadcrumbs";
 
 const Dashboard = () => {
@@ -10,6 +10,7 @@ const Dashboard = () => {
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [recentActivity, setRecentActivity] = useState([]);
   const [examStats, setExamStats] = useState({ exams_taken: 0, avg_score: 0 });
+  const [userCreatedQuizzes, setUserCreatedQuizzes] = useState(0);
 
   // Fetch enrollments on mount
   useEffect(() => {
@@ -51,9 +52,10 @@ const Dashboard = () => {
             avg_score: examStatsRes.avg_score || 0
           });
 
-          // Get user quizzes for recent activity
+          // Get user's created quizzes for progress calculation
           const quizzesRes = await getUserQuizzes(userId);
           const quizzes = quizzesRes.data?.quizzes || [];
+          setUserCreatedQuizzes(quizzes.length);
 
           // Build recent activity from quizzes
           const activity = quizzes
@@ -114,7 +116,14 @@ const Dashboard = () => {
   } catch {}
 
   const navigate = useNavigate();
-  const progressValue = 65;
+  
+  // Calculate progress based on exams taken vs user's own created exams
+  const calculateProgress = () => {
+    if (userCreatedQuizzes === 0) return 0;
+    return Math.round((examStats.exams_taken / userCreatedQuizzes) * 100);
+  };
+  
+  const progressValue = calculateProgress();
 
   const getActivityIcon = (type) => {
     switch (type) {
@@ -407,8 +416,40 @@ const Dashboard = () => {
                   style={{ width: `${progressValue}%` }}
                 />
               </div>
+              <div className="mt-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600 dark:text-slate-400">Exams Taken:</span>
+                  <span className="font-medium text-slate-900 dark:text-white">{examStats.exams_taken}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600 dark:text-slate-400">Mock Exams Created:</span>
+                  <span className="font-medium text-slate-900 dark:text-white">{userCreatedQuizzes}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600 dark:text-slate-400">Courses Enrolled:</span>
+                  <span className="font-medium text-slate-900 dark:text-white">{courses.length}</span>
+                </div>
+                {examStats.avg_score > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600 dark:text-slate-400">Avg Score:</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{examStats.avg_score}%</span>
+                  </div>
+                )}
+              </div>
               <p className="text-sm text-slate-600 dark:text-slate-400 text-center mt-4">
-                Keep going! You're doing great! 🎉
+                {userCreatedQuizzes === 0 
+                  ? "Create your first mock exam! �"
+                  : progressValue === 0 
+                  ? "Ready to take your created exams! 🚀" 
+                  : progressValue < 25 
+                  ? "Just getting started! 🌱" 
+                  : progressValue < 50 
+                  ? "Making good progress! 💪" 
+                  : progressValue < 75 
+                  ? "You're doing great! 🎉" 
+                  : progressValue < 100
+                  ? "Almost finished all your exams! 🔥"
+                  : "All your exams completed! 🏆"}
               </p>
             </div>
 
