@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import React, { useState, useEffect } from "react";
+import PDFWithAI from "../components/PDFWithAI";
 import { useParams } from "react-router-dom";
 import Breadcrumbs from "../components/Breadcrumbs";
 import {
@@ -936,7 +937,7 @@ const MockExam = () => {
             {/* Blurred background */}
             <div className="absolute inset-0 bg-black/10 backdrop-blur-md transition-all duration-200" />
             {/* Modal box */}
-            <div className="relative z-10 w-full max-w-4xl mx-auto rounded-2xl shadow-2xl bg-white dark:bg-gray-900 flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700">
+            <div className="relative z-10 w-[98%] max-w-[1800px] h-[95vh] mx-auto rounded-2xl shadow-2xl bg-white dark:bg-gray-900 flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700">
               {/* Modern Top Bar */}
               <div className="flex items-center justify-between px-6 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3">
@@ -963,14 +964,14 @@ const MockExam = () => {
                     />
                   </svg>
                   <span
-                    className="font-semibold text-gray-800 dark:text-gray-100 truncate max-w-xs sm:max-w-md"
+                    className="font-semibold text-gray-800 dark:text-gray-100 truncate max-w-xs sm:max-w-lg lg:max-w-2xl"
                     title={pdfView}
                   >
                     {pdfView}
                   </span>
                 </div>
                 <button
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200/80 dark:bg-gray-700/80 hover:bg-red-500 hover:text-white transition-colors text-gray-700 dark:text-gray-200 shadow"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200/80 dark:bg-gray-700/80 hover:bg-red-500 hover:text-white transition-colors text-gray-700 dark:text-gray-200 shadow-md"
                   onClick={() => {
                     setShowModal(false);
                     setPdfView(null);
@@ -992,13 +993,16 @@ const MockExam = () => {
                   </svg>
                 </button>
               </div>
-              <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="flex-1 overflow-hidden">
+                <PDFWithAI url={getPastPaperPdfUrl(courseId, pdfView)} />
+              {/* <div className="flex-1 flex flex-col items-center justify-center">
                 <iframe
                   src={getPastPaperPdfUrl(courseId, pdfView)}
                   title={pdfView}
                   className="w-full h-full flex-1 border-none bg-white dark:bg-gray-900"
                   style={{ minHeight: "80vh" }}
                 />
+              </div> */}
               </div>
             </div>
           </div>
