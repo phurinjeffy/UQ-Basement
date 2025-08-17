@@ -244,7 +244,7 @@ const Dashboard = () => {
                   className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 text-sm"
                 >
                   <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21.71 8.71c1.25-1.25.68-2.816 0-3.43-0.68-0.614-2.18-1.25-3.43 0l-1.34 1.34c-0.92-0.12-2.07 0.21-2.91 1.05-0.84 0.84-1.17 1.99-1.05 2.91l-8.34 8.34c-0.78 0.78-0.78 2.05 0 2.83 0.78 0.78 2.05 0.78 2.83 0l8.34-8.34c0.92 0.12 2.07-0.21 2.91-1.05 0.84-0.84 1.17-1.99 1.05-2.91l1.34-1.34z" />
                   </svg>
                   Manage
                 </button>
