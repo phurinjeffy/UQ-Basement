@@ -1,6 +1,6 @@
 import "./App.css";
 import Navbar from "./components/Navbar";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 
 import Home from "./pages/Home.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -12,6 +12,9 @@ import { ThemeProvider } from "./context/ThemeContext";
 import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
+  const location = useLocation();
+  const showNavbar = location.pathname !== '/';
+
   return (
     <ThemeProvider>
       <AuthProvider>
@@ -19,7 +22,7 @@ function App() {
           <div className="drawer">
             <input id="my-drawer" type="checkbox" className="drawer-toggle" />
             <div className="drawer-content">
-              <Navbar />
+              {showNavbar && <Navbar />}
               <main className="relative">
                 <Routes>
                   <Route path="/" element={<Home />} />
