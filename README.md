@@ -21,7 +21,7 @@ UQ-Basement is an intelligent web application that revolutionizes exam preparati
 ### 📋 Quiz System
 - **Interactive Interface**: Clean, responsive quiz interface with progress tracking
 - **Auto-save**: Automatic saving of answers to prevent data loss
-- **Timed Exams**: Configurable time limits for realistic exam simulation
+- **AI-Powered Autograder**: Automatic and intelligent scoring of responses
 - **Results Analysis**: Comprehensive feedback on performance with correct answers
 
 ### 👤 User Management
@@ -85,7 +85,7 @@ frontend/
 - **Node.js 16+** with npm
 - **Supabase Account** for database and storage
 - **OpenRouter API Key** for AI services (optional: OpenAI API key)
-- **AWS S3 Compatible Storage** for past papers
+- **AWS S3 Compatible Storage** for past papers (e.g. Supabase Storage)
 
 ### 🔧 Installation
 
@@ -154,7 +154,7 @@ Set up your Supabase database with the following tables:
 #### Start Backend Server
 ```bash
 cd backend
-python main.py
+uvicorn main:app --reload
 # Server runs on http://localhost:8000
 ```
 
@@ -182,7 +182,6 @@ npm run dev
 
 3. **Taking Mock Exams**
    - Generate AI-powered mock exams from past papers
-   - Complete timed practice exams
    - Receive detailed feedback and explanations
    - Track your progress over time
 
@@ -191,11 +190,6 @@ npm run dev
    - Get step-by-step solutions and explanations
    - Understand key concepts and methodologies
 
-### For Administrators
-
-- **Course Management**: Add and manage course information
-- **User Analytics**: Track usage and performance metrics
-- **Content Moderation**: Review AI-generated content quality
 
 ## 🛠️ Technology Stack
 
@@ -224,9 +218,7 @@ npm run dev
 
 ### Infrastructure
 - **Supabase**: Backend-as-a-Service (database, auth, storage)
-- **AWS S3**: Cloud storage for past papers
-- **Vercel/Netlify**: Frontend deployment (recommended)
-- **Railway/Heroku**: Backend deployment options
+- **AWS S3**: (via Supabase Storage) Cloud storage for past papers
 
 ## 🔌 API Endpoints
 
@@ -309,38 +301,9 @@ npm run dev
 
 ### 📊 Additional Features
 - **Pagination**: Most list endpoints support `limit`, `offset`, and `page` parameters
-- **Filtering**: Courses and questions can be filtered by various criteria
 - **Search**: Full-text search available for courses and questions
-- **File Upload**: Support for PDF uploads and image processing
 - **Real-time Processing**: Background tasks for AI processing
 - **Bulk Operations**: Batch creation and updates for efficiency
-- **No Time Limits**: Quizzes can be created with or without time constraints
-
-## 🤝 Contributing
-
-We welcome contributions to improve UQ-Basement! Here's how you can help:
-
-### Development Setup
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes and test thoroughly
-4. Commit with clear messages: `git commit -m 'Add amazing feature'`
-5. Push to your branch: `git push origin feature/amazing-feature`
-6. Open a Pull Request
-
-### Code Style
-- **Python**: Follow PEP 8 guidelines
-- **JavaScript/React**: Use ESLint configuration provided
-- **Documentation**: Update README for significant changes
-- **Testing**: Add tests for new features
-
-### Areas for Contribution
-- 🎨 UI/UX improvements
-- 🤖 AI model fine-tuning
-- 📊 Analytics and reporting features
-- 🔒 Security enhancements
-- 📱 Mobile responsiveness
-- 🌐 Internationalization
 
 ## 📄 License
 
@@ -348,17 +311,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **University of Queensland** for providing access to past papers
+- **UQ Library** for providing access to past papers (via Student Login)
 - **UQCS Hackathon 2025** for the inspiration and platform
 - **OpenRouter & OpenAI** for AI capabilities
 - **Supabase** for the excellent backend infrastructure
 - **React & FastAPI Communities** for amazing documentation
+- **ChatGPT & GitHub Copilot** for assisting with code development and debugging
 
-## 📞 Support
-
-- **Issues**: Report bugs via [GitHub Issues](https://github.com/yourusername/UQ-Basement/issues)
-- **Discussions**: Join our [GitHub Discussions](https://github.com/yourusername/UQ-Basement/discussions)
-- **Email**: Contact us at support@uq-basement.com
 
 ---
 

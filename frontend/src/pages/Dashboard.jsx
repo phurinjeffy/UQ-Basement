@@ -224,17 +224,6 @@ const Dashboard = () => {
                 Ready to ace your exams? Let's continue your learning journey.
               </p>
             </div>
-            <div className="mt-4 sm:mt-0">
-              <button
-                onClick={() => setShowAddCourses(true)}
-                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Manage Courses
-              </button>
-            </div>
           </div>
         </div>
 
@@ -289,8 +278,19 @@ const Dashboard = () => {
             {/* Courses Section */}
             <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-lg rounded-2xl p-6 border border-white/20 dark:border-slate-700/20 shadow-xl">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Your Courses</h2>
-                <span className="text-sm text-slate-500 dark:text-slate-400">{courses.length} enrolled</span>
+                <div className="flex items-center gap-4">
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Your Courses</h2>
+
+                </div>
+                <button
+                  onClick={() => setShowAddCourses(true)}
+                  className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 text-sm"
+                >
+                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21.71 8.71c1.25-1.25.68-2.816 0-3.43-0.68-0.614-2.18-1.25-3.43 0l-1.34 1.34c-0.92-0.12-2.07 0.21-2.91 1.05-0.84 0.84-1.17 1.99-1.05 2.91l-8.34 8.34c-0.78 0.78-0.78 2.05 0 2.83 0.78 0.78 2.05 0.78 2.83 0l8.34-8.34c0.92 0.12 2.07-0.21 2.91-1.05 0.84-0.84 1.17-1.99 1.05-2.91l1.34-1.34z" />
+                  </svg>
+                  Manage
+                </button>
               </div>
 
               {loadingCourses ? (
@@ -354,26 +354,28 @@ const Dashboard = () => {
                         onClick={() => navigate(`/courses/${course.name}`)}
                         className="group p-4 bg-white/50 dark:bg-slate-700/50 rounded-xl border border-slate-200/50 dark:border-slate-600/50 hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200"
                       >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="text-left">
-                            <h3 className="font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                              {course.name}
-                            </h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
-                              {course.title}
-                            </p>
+                        <div className="flex flex-col h-full">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="text-left flex-1">
+                              <h3 className="font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                {course.name}
+                              </h3>
+                              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                                {course.title}
+                              </p>
+                            </div>
+                            {countdown && (
+                              <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${badgeColor}`}>
+                                {countdown}
+                              </span>
+                            )}
                           </div>
-                          {countdown && (
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${badgeColor}`}>
-                              {countdown}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-slate-400 dark:text-slate-500">Click to explore</span>
-                          <svg className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
+                          <div className="flex items-center justify-between mt-auto">
+                            <span className="text-xs text-slate-400 dark:text-slate-500">Click to explore</span>
+                            <svg className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
                         </div>
                       </button>
                     );
