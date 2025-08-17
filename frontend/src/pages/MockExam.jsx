@@ -1001,6 +1001,8 @@ const MockExam = () => {
                       console.log("Quiz API response:", quizResp);
                       if (quizResp && quizResp.quiz) {
                         setMockExams([...(mockExams || []), quizResp.quiz]);
+                        // Refresh the page after successful generation
+                        window.location.reload();
                       } else if (
                         quizResp &&
                         quizResp.success === false &&
