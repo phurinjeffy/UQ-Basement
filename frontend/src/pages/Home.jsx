@@ -83,14 +83,14 @@ function Home() {
                     className="text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-6 leading-tight"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   >
-                    Your Academic
+                    Mock More
                     <span className="block bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                      Success Partner
+                    Stress Less
                     </span>
                   </h2>
 
                   <p className="text-lg text-slate-600 dark:text-slate-300 mb-8 leading-relaxed">
-                    Access your courses, analyze past papers with AI, and prepare for exams like never before. Join thousands of UQ students already using our platform.
+                    Access your courses, analyze past papers with AI, and prepare for exams like never before.
                   </p>
 
                   <div className="space-y-4">
