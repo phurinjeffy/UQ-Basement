@@ -18,6 +18,40 @@ router = APIRouter()
 # Always use project root for past_papers dir
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+@router.post("/ai/fetch-answers")
+async def fetch_answers(user_id: str = Query(...), quiz_id: str = Query(...)):
+    """
+    Fetch answers directly from /api/v1/all/answers and save to user_answers.json.
+    """
+    try:
+        url = "http://localhost:8000/api/v1/all/answers"
+        params = {"user_id": user_id, "quiz_id": quiz_id}
+
+        # Async request to avoid blocking
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(url, params=params)
+
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail=resp.text)
+
+        answers_json = resp.json()
+
+        # Ensure {"answers": [...]} structure
+        if isinstance(answers_json, dict) and "answers" in answers_json:
+            output = answers_json
+        else:
+            output = {"answers": answers_json}
+
+        # Save to user_answers.json
+        json_path = os.path.join(PROJECT_ROOT, "user_answers.json")
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(output, f, ensure_ascii=False, indent=2)
+
+        return output
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
 # S3/Supabase config
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
