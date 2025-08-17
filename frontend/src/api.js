@@ -218,4 +218,15 @@ export async function getUserExamStats(userId) {
         console.error("Error fetching user exam stats:", err.response?.data || err);
         throw err;
     }
+}
+
+// Get available quizzes for user's enrolled courses
+export async function getAvailableQuizzes(userId) {
+    try {
+        const res = await axios.get(`${API_BASE}/quiz/available-for-user/${userId}`);
+        return res.data;
+    } catch (err) {
+        console.error("Error fetching available quizzes:", err.response?.data || err);
+        throw err;
+    }
 }   

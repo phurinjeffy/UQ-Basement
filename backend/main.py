@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import users, courses, ai, questions, enrollments, quiz, answers
+from routers import users, courses, ai, questions, enrollments, quiz, answers, quiz_stats
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -16,6 +16,7 @@ app.include_router(questions.router, prefix="/api/v1/question", tags=["Questions
 app.include_router(enrollments.router, prefix="/api/v1", tags=["Enrollments"])
 app.include_router(quiz.router, prefix="/api/v1/quiz", tags=["Quiz"])
 app.include_router(answers.router, prefix="/api/v1", tags=["Answers"])
+app.include_router(quiz_stats.router, prefix="/api/v1/quiz", tags=["Quiz Stats"])
 
 # CORS middleware setup
 from fastapi.middleware.cors import CORSMiddleware
