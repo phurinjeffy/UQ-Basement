@@ -156,11 +156,11 @@ export default function PDFWithAI({ url }) {
   const disableNext = pageNumber >= numPages || loading;
 
   return (
-    <div className="flex w-full h-full bg-gray-100 dark:bg-gray-900 p-4">
+    <div className="flex w-full h-full bg-gray-100 dark:bg-gray-900 p-6">
       {/* Main Container */}
       <div className="flex flex-row gap-4 w-full h-full">
         {/* PDF Viewer Section */}
-        <div className="flex flex-col flex-grow min-w-0">
+        <div className="flex flex-col flex-grow min-w-0 h-full">
           {/* Controls */}
           <div className="flex items-center justify-between gap-4 mb-2 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
             <div className="flex items-center gap-3">
@@ -179,8 +179,8 @@ export default function PDFWithAI({ url }) {
             </div>
           </div>
           {/* PDF Viewer */}
-          <div className="flex-1 relative bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-auto">
-            <div className="absolute inset-0 flex items-start justify-center p-4">
+          <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-auto">
+            <div className="flex items-start justify-center p-4 min-h-full">
               {loading && <div className="p-10 text-lg">Loading PDF...</div>}
               {error && !loading && <div className="p-4 text-red-500">{error}</div>}
               <canvas 
@@ -197,8 +197,8 @@ export default function PDFWithAI({ url }) {
         </div>
 
         {/* AI Assistant Panel */}
-        <div className="w-[380px] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-          <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="w-[380px] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-lg h-full">
+          <div className="flex-none p-3 border-b border-gray-200 dark:border-gray-700">
             <button 
               className="btn btn-primary w-full h-10 text-base font-medium" 
               onClick={handleAskAI} 
@@ -222,8 +222,54 @@ export default function PDFWithAI({ url }) {
                 </div>
               </div>
             ) : (
-              <div className="prose dark:prose-invert max-w-none">
-                {aiAnswer || (
+              <div className="prose dark:prose-invert max-w-none space-y-6">
+                {aiAnswer ? (
+                  <div className="space-y-8">
+                    {aiAnswer.split(/\*\*Question \d+(?:\s*\([a-z]\))?\*\*/).map((section, index) => {
+                      if (!section.trim()) return null;
+                      
+                      // Extract question number and part if present
+                      const questionMatch = aiAnswer.match(new RegExp(`\\*\\*Question (\\d+(?:\\s*\\([a-z]\\))?)\\*\\*${section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+                      const questionNum = questionMatch ? questionMatch[1] : '';
+                      
+                      return (
+                        <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white/50 dark:bg-gray-800/50">
+                          {questionNum && (
+                            <h3 className="text-lg font-semibold mb-4 text-indigo-600 dark:text-indigo-400">
+                              Question {questionNum}
+                            </h3>
+                          )}
+                          {section.split(/(Step-by-step reasoning|Final answer|Key concepts involved):/).map((part, i) => {
+                            if (part === 'Step-by-step reasoning' || part === 'Final answer' || part === 'Key concepts involved') {
+                              return (
+                                <h4 key={i} className="font-semibold text-gray-700 dark:text-gray-300 mt-4 mb-2">
+                                  {part}:
+                                </h4>
+                              );
+                            }
+                            return (
+                              <div key={i} className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                                {part.includes('```') ? (
+                                  part.split('```').map((code, j) => 
+                                    j % 2 === 1 ? (
+                                      <pre key={j} className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md font-mono text-sm my-2 overflow-x-auto">
+                                        {code.trim()}
+                                      </pre>
+                                    ) : (
+                                      <span key={j}>{code}</span>
+                                    )
+                                  )
+                                ) : (
+                                  <span className="whitespace-pre-line">{part.trim()}</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
                   <div className="text-gray-500 dark:text-gray-400">
                     <p className="text-lg">Welcome to AI Assistant! 👋</p>
                     <p>Click the button above to get help understanding this page.</p>

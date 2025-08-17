@@ -993,7 +993,7 @@ const MockExam = () => {
                   </svg>
                 </button>
               </div>
-              <div className="flex-1">
+              <div className="flex-1 overflow-hidden">
                 <PDFWithAI url={getPastPaperPdfUrl(courseId, pdfView)} />
               {/* <div className="flex-1 flex flex-col items-center justify-center">
                 <iframe
