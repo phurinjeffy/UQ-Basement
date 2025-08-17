@@ -25,6 +25,8 @@ UQ-Basement is an intelligent web application that revolutionizes exam preparati
 - **Results Analysis**: Comprehensive feedback on performance with correct answers
 
 ### 👤 User Management
+<img width="1512" height="822" alt="image" src="https://github.com/user-attachments/assets/74ba0a7a-9a83-43dc-bc51-a6f973948dec" />
+
 - **Authentication**: Secure JWT-based authentication system
 - **Course Enrollment**: Track enrolled courses and exam schedules
 - **Personal Dashboard**: Overview of courses, upcoming exams, and progress
