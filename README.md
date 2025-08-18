@@ -8,7 +8,7 @@ UQ-Basement is an intelligent web application that revolutionizes exam preparati
 ## 🌟 Features
 
 ### 👤 User & Progress Management
-<img width="2839" height="1505" alt="image" src="https://github.com/user-attachments/assets/7782c5aa-ea2d-4b59-895e-95b1c699b831" />
+<img width="2840" height="1503" alt="Screenshot 2025-08-18 163031" src="https://github.com/user-attachments/assets/4b3c9bba-3e03-45dc-9031-ebe103ba3926" />
 
 - **Authentication**: Secure JWT-based authentication system
 - **Course Enrollment**: Track enrolled courses and exam schedules
@@ -24,7 +24,7 @@ UQ-Basement is an intelligent web application that revolutionizes exam preparati
 - **S3 Storage**: Efficient cloud storage for all past paper documents
 
 ### 🤖 AI-Powered Mock Exams
-![Uploading image.png…]()
+<img width="2839" height="1505" alt="image" src="https://github.com/user-attachments/assets/7782c5aa-ea2d-4b59-895e-95b1c699b831" />
 
 - **Question Generation**: AI extracts and generates practice questions from past papers
 - **Multiple Question Types**: Supports multiple choice, short answer, essay, and calculation questions
