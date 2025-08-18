@@ -2,7 +2,7 @@
 
 **AI-Powered Mock Exam Platform for University of Queensland Students**
 
-UQ-Basement is an intelligent web application that revolutionizes exam preparation by automatically generating mock exams from past papers using AI. Built for the UQCS Hackathon 2025, it provides UQ students with personalized practice exams, AI-powered answer checking, and comprehensive study tools.
+UQ-Basement is an intelligent web application that revolutionizes exam preparation by automatically generating mock exams from past papers using AI. It has an AI Assistant that provides detailed explanations to past exam questions. Built for the UQCS Hackathon 2025, it provides UQ students with personalized practice exams, AI-powered answer checking, and comprehensive study tools.
 
 
 ## 🌟 Features
@@ -16,7 +16,7 @@ UQ-Basement is an intelligent web application that revolutionizes exam preparati
 - **Profile Management**: User settings and preferences
   
 ### 📚 Past Papers Management
-<img width="2839" height="1513" alt="image" src="https://github.com/user-attachments/assets/c8c6e4c7-73c0-4a02-ae9c-dcc1155d880b" />
+<img width="2876" height="1514" alt="image" src="https://github.com/user-attachments/assets/d2f83ce7-c4b7-4777-b7df-844c01468d97" />
 
 - **Automated Download**: Seamlessly downloads past papers from UQ Library resources
 - **Smart Organization**: Sorts papers by year and semester for easy navigation
@@ -322,15 +322,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **UQ Library** for providing access to past papers (via Student Login)
+  - All exam papers are property of UQ and used for demonstration purposes only
 - **UQCS Hackathon 2025** for the inspiration and platform
 - **OpenRouter & OpenAI** for AI capabilities
 - **Supabase** for the excellent backend infrastructure
 - **React & FastAPI Communities** for amazing documentation
 - **ChatGPT & GitHub Copilot** for assisting with code development and debugging
-
-
----
-
-**Made with ❤️ for UQ students by UQ students**
-
-*UQ-Basement - Transform your exam preparation with AI-powered mock exams!*
