@@ -4,11 +4,17 @@
 
 UQ-Basement is an intelligent web application that revolutionizes exam preparation by automatically generating mock exams from past papers using AI. Built for the UQCS Hackathon 2025, it provides UQ students with personalized practice exams, AI-powered answer checking, and comprehensive study tools.
 
-<img width="1917" height="926" alt="image" src="https://github.com/user-attachments/assets/c7d34318-b938-4c59-a257-0f5c6d8e05cd" />
-
 
 ## 🌟 Features
 
+### 👤 User & Progress Management
+<img width="2839" height="1505" alt="image" src="https://github.com/user-attachments/assets/7782c5aa-ea2d-4b59-895e-95b1c699b831" />
+
+- **Authentication**: Secure JWT-based authentication system
+- **Course Enrollment**: Track enrolled courses and exam schedules
+- **Personal Dashboard**: Overview of courses, upcoming exams, and progress
+- **Profile Management**: User settings and preferences
+  
 ### 📚 Past Papers Management
 <img width="2839" height="1513" alt="image" src="https://github.com/user-attachments/assets/c8c6e4c7-73c0-4a02-ae9c-dcc1155d880b" />
 
@@ -18,6 +24,8 @@ UQ-Basement is an intelligent web application that revolutionizes exam preparati
 - **S3 Storage**: Efficient cloud storage for all past paper documents
 
 ### 🤖 AI-Powered Mock Exams
+![Uploading image.png…]()
+
 - **Question Generation**: AI extracts and generates practice questions from past papers
 - **Multiple Question Types**: Supports multiple choice, short answer, essay, and calculation questions
 - **Intelligent Parsing**: Advanced text processing to identify and format questions properly
@@ -31,11 +39,6 @@ UQ-Basement is an intelligent web application that revolutionizes exam preparati
 - **AI-Powered Autograder**: Automatic and intelligent scoring of responses
 - **Results Analysis**: Comprehensive feedback on performance with correct answers
 
-### 👤 User Management
-- **Authentication**: Secure JWT-based authentication system
-- **Course Enrollment**: Track enrolled courses and exam schedules
-- **Personal Dashboard**: Overview of courses, upcoming exams, and progress
-- **Profile Management**: User settings and preferences
 
 ## 🏗️ Architecture
 
